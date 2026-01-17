@@ -17,15 +17,18 @@ namespace Void_Profile_Editor
             // выбираем семейство продавливания
             var selectionFIlter = new SelectionService(commandData);
             FamilyInstance element = selectionFIlter.PickObject();
-            // ищем вложеноое семейство штриховки
-            var nestedInstance = new FilteredElementCollector(element.Document)
-                .OfClass(typeof(FamilyInstance))
-                .Cast<FamilyInstance>()
-                .Where(fi => fi.Symbol.Family.FamilyPlacementType == FamilyPlacementType.OneLevelBasedHosted)
-                .Where(fi => fi.Host != null /*&& fi.Host.Id == element.Id && fi.Name.Contains("Торец стены")*/)
-                .ToList();
-                //.FirstOrDefault();
-            TaskDialog.Show("Debug", $"{nestedInstance.First().Host.Id}");
+           
+            // получаем информацию о семействе
+            var pressureCountourService = new PressureCounturInformationService(commandData);
+            var result = pressureCountourService.CreatePressureConturInfo(element);
+
+            string debugInfo = $"Id: {result.Value.Id}" +
+                $"H0: {result.Value.H0}";
+
+            TaskDialog.Show("debug", debugInfo);
+
+
+
             return Result.Succeeded;
         }
 
