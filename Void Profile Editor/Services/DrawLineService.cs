@@ -12,14 +12,13 @@ namespace Void_Profile_Editor.Services
         {
             _commandData = commandData;
         }
-        public CSharpFunctionalExtensions.Result DrawLine(XYZ start, XYZ end, Transaction transaction = null, View view = null, string lineStyleName = "Тонкие линии")
+        public CSharpFunctionalExtensions.Result DrawLine(Line line, Transaction transaction = null, View view = null, string lineStyleName = "Тонкие линии")
         {
             Document doc = _commandData.Application.ActiveUIDocument.Document;
-            if (transaction != null)
+            if (transaction == null)
                 throw new InvalidOperationException("Метод может вызван только внутри транзакции");
-            if (view != null)
-                view = doc.ActiveView;
-            Line line = Line.CreateBound(start, end);
+            if (view == null)
+                view = doc.ActiveView;            
             DetailLine detailLine = doc.Create.NewDetailCurve(view, line) as DetailLine;
             if (detailLine != null)
             {

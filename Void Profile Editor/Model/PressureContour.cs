@@ -14,5 +14,6 @@ namespace Void_Profile_Editor.Model
         public double WallThickness { get; set; }
         public XYZ InsertPoint { get; set; }
         public double Rotation { get; set; }
+        public XYZ Center { get; set; }
     }
 }

@@ -17,15 +17,32 @@ namespace Void_Profile_Editor
             // выбираем семейство продавливания
             var selectionFIlter = new SelectionService(commandData);
             FamilyInstance element = selectionFIlter.PickObject();
-           
+
             // получаем информацию о семействе
             var pressureCountourService = new PressureCounturInformationService(commandData);
-            var result = pressureCountourService.CreatePressureConturInfo(element);
+            var pressureContour = pressureCountourService.CreatePressureConturInfo(element);
 
-            string debugInfo = $"Id: {result.Value.Id}" +
-                $"H0: {result.Value.H0}";
+            // создаем контур на расстоянии 6h0 от площади на которую действует продавливающая сила
+            var create6h0ContourService = new Create6H0ContourService();
+            var contour6h0 = create6h0ContourService.Create(
+                pressureContour.Value.InsertPoint,
+                pressureContour.Value.Rotation,
+                pressureContour.Value.H0,
+                pressureContour.Value.WallThickness);
 
-            TaskDialog.Show("debug", debugInfo);
+            // рисуем контур
+            using(var t=new Transaction(doc,"Контур 6h0"))
+            {
+                t.Start();
+                var drawLineService=new DrawLineService(commandData);
+                drawLineService.DrawLine(line:contour6h0.Value.Bottom,transaction: t);
+                drawLineService.DrawLine(line: contour6h0.Value.Left, transaction: t);
+                drawLineService.DrawLine(line: contour6h0.Value.Right, transaction: t);
+
+                t.Commit();
+            }
+            
+            //TaskDialog.Show("debug", debugInfo);
 
 
 
