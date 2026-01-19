@@ -15,13 +15,14 @@ namespace Void_Profile_Editor.Services
             (XYZ locationPoint,
             double rotationAngle,
             double h0,
-            double thickness)
+            double thickness,
+            bool isMirrored)
         {
             // вычисляем координаты углов контура
             XYZ bottomRight = new XYZ
                 (locationPoint.X + thickness / 2 + 6 * h0,
                 locationPoint.Y - 6 * h0,
-                0);            
+                0);
             XYZ bottomLeft = new XYZ
                 (locationPoint.X - thickness / 2 - 6 * h0,
                 locationPoint.Y - 6 * h0,
@@ -34,6 +35,7 @@ namespace Void_Profile_Editor.Services
                 (locationPoint.X - thickness / 2 - 6 * h0,
                 locationPoint.Y + thickness + 0.5 * h0,
                 0);
+            rotationAngle = isMirrored ? (rotationAngle - Math.PI) % (2 * Math.PI) : rotationAngle % (2 * Math.PI);
             // поворачиваем контур
             bottomRight = RotatePointAroundAxis(bottomRight, locationPoint, XYZ.BasisZ, rotationAngle);
             bottomLeft = RotatePointAroundAxis(bottomLeft, locationPoint, XYZ.BasisZ, rotationAngle);

@@ -15,5 +15,6 @@ namespace Void_Profile_Editor.Model
         public XYZ InsertPoint { get; set; }
         public double Rotation { get; set; }
         public XYZ Center { get; set; }
+        public bool IsMirrored { get; set; }
     }
 }

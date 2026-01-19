@@ -28,7 +28,8 @@ namespace Void_Profile_Editor
                 pressureContour.Value.InsertPoint,
                 pressureContour.Value.Rotation,
                 pressureContour.Value.H0,
-                pressureContour.Value.WallThickness);
+                pressureContour.Value.WallThickness,
+                element.Mirrored);
 
             // рисуем контур
             using(var t=new Transaction(doc,"Контур 6h0"))
