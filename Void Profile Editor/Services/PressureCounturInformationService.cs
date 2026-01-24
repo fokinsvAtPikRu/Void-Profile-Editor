@@ -15,9 +15,13 @@ namespace Void_Profile_Editor.Services
     public class PressureCounturInformationService
     {
         private ExternalCommandData _commandData;
-        public PressureCounturInformationService(ExternalCommandData commandData)
+        private GeometryService _geometryService;
+        public PressureCounturInformationService(
+            ExternalCommandData commandData,
+            GeometryService geometryService)
         {
             _commandData = commandData;
+            _geometryService = geometryService;
         }
 
         public CSharpFunctionalExtensions.Result<PressureContour> CreatePressureConturInfo(FamilyInstance instance)
@@ -33,24 +37,18 @@ namespace Void_Profile_Editor.Services
             };
             return contour;
         }
-        // код дублируется, вынести куда то
+        
         public CSharpFunctionalExtensions.Result<XYZ> GetCenterPressureContur(PressureContour contour)
         {
             XYZ center = new XYZ(
                 contour.InsertPoint.X,
                 contour.InsertPoint.Y + contour.WallThickness + contour.H0 / 2,
                 0);
-            // Создаем матрицу вращения
-            Transform rotation = Transform.CreateRotation(XYZ.BasisZ, contour.Rotation);
-
-            // Смещаем точку относительно центра вращения
-            XYZ translatedPoint = center - contour.InsertPoint;
-
-            // Поворачиваем точку
-            XYZ rotatedTranslatedPoint = rotation.OfPoint(translatedPoint);
-
-            // Возвращаем точку в исходную систему координат
-            return rotatedTranslatedPoint + center;
+            return _geometryService.RotatePointAroundAxis(
+                center,
+                contour.InsertPoint,
+                XYZ.BasisZ, 
+                contour.Rotation);
         }
     }
 }

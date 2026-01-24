@@ -15,33 +15,56 @@ namespace Void_Profile_Editor
         {
             Document doc = commandData.Application.ActiveUIDocument.Document;
             // выбираем семейство продавливания
-            var selectionFIlter = new SelectionService(commandData);
-            FamilyInstance element = selectionFIlter.PickObject();
+            var selectionService = new SelectionService(commandData);
+            FamilyInstance element = selectionService.PickObject();
 
             // получаем информацию о семействе
-            var pressureCountourService = new PressureCounturInformationService(commandData);
+            var pressureCountourService = new PressureCounturInformationService(commandData, new GeometryService());
             var pressureContour = pressureCountourService.CreatePressureConturInfo(element);
 
-            // создаем контур на расстоянии 6h0 от площади на которую действует продавливающая сила
-            var create6h0ContourService = new Create6H0ContourService();
-            var contour6h0 = create6h0ContourService.Create(
+            // создаем контур на расстоянии 6h0 от площади на которую действует продавливающая сила            
+            var createContourService = new CreateContourService(new GeometryService());
+            var contour6h0 = createContourService.Create(
                 pressureContour.Value.InsertPoint,
                 pressureContour.Value.Rotation,
                 pressureContour.Value.H0,
                 pressureContour.Value.WallThickness,
+                6 * pressureContour.Value.H0,
+                element.Mirrored);
+            var contourH0 = createContourService.Create(
+                pressureContour.Value.InsertPoint,
+                pressureContour.Value.Rotation,
+                pressureContour.Value.H0,
+                pressureContour.Value.WallThickness,
+                pressureContour.Value.H0,
                 element.Mirrored);
 
+
             // рисуем контур
-            using(var t=new Transaction(doc,"Контур 6h0"))
+            using (var t=new Transaction(doc,"Контуры"))
             {
                 t.Start();
                 var drawLineService=new DrawLineService(commandData);
                 drawLineService.DrawLine(line:contour6h0.Value.Bottom,transaction: t);
                 drawLineService.DrawLine(line: contour6h0.Value.Left, transaction: t);
                 drawLineService.DrawLine(line: contour6h0.Value.Right, transaction: t);
+                drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
+                drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
+                drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
 
                 t.Commit();
             }
+
+            // выбирааем точку
+            XYZ point = selectionService.PickPoint();
+            // строим отсекующую линию 
+            Line cutingLine = Line.CreateBound(point, (pressureCountourService.GetCenterPressureContur(pressureContour.Value)).Value);
+            // ищем пересечения
+            foreach (var line in contourH0.Value)
+            {
+                line.Value.Intersect(cutingLine);
+            }
+
             
             //TaskDialog.Show("debug", debugInfo);
 
@@ -50,19 +73,6 @@ namespace Void_Profile_Editor
             return Result.Succeeded;
         }
 
-        private HashSet<Line> GetAllLines(GeometryElement geomElement, HashSet<Line> lines = null)
-        {
-            if (lines == null)
-                lines = new HashSet<Line>();
-            foreach (GeometryObject geometryObject in geomElement)
-            {
-                TaskDialog.Show("DEBUG", $"{typeof(GeometryObject)}");
-                if (geometryObject is Line line)
-                    lines.Add(line);
-                else if (geometryObject is GeometryInstance geometryInstance)
-                    GetAllLines(geometryInstance.GetInstanceGeometry(), lines);
-            }
-            return lines;
-        }
+        
     }
 }

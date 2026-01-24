@@ -18,5 +18,12 @@ namespace Void_Profile_Editor.Services
             FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
             return element;
         }
+
+        public XYZ PickPoint()
+        {
+            Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.PointOnElement, "Выберите точку");
+            XYZ point = reference.GlobalPoint;
+            return point;
+        }
     }
 }
