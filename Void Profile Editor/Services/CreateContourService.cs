@@ -22,11 +22,11 @@ namespace Void_Profile_Editor.Services
             // вычисляем координаты углов контура
             XYZ bottomRight = new XYZ
                 (locationPoint.X + thickness / 2 + offset,
-                locationPoint.Y - 6 * h0,
+                locationPoint.Y - offset,
                 0);
             XYZ bottomLeft = new XYZ
                 (locationPoint.X - thickness / 2 - offset,
-                locationPoint.Y - 6 * h0,
+                locationPoint.Y - offset,
                 0);
             XYZ topRight = new XYZ
                 (locationPoint.X + thickness / 2 + offset,

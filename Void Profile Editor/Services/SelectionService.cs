@@ -14,16 +14,30 @@ namespace Void_Profile_Editor.Services
 
         public FamilyInstance PickObject()
         {
-            Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new FamilyInstanceSelectionFilter(), "Выберите элемент");
-            FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
-            return element;
+            try
+            {
+                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new FamilyInstanceSelectionFilter(), "Выберите элемент");
+                FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
+                return element;
+            }
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+            {
+                return null;
+            }
         }
 
         public XYZ PickPoint()
         {
-            Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.PointOnElement, "Выберите точку");
-            XYZ point = reference.GlobalPoint;
-            return point;
+            try
+            {
+                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.PointOnElement, "Выберите точку");
+                XYZ point = reference.GlobalPoint;
+                return point;
+            }
+            catch(Autodesk.Revit.Exceptions.OperationCanceledException)
+            {
+                return null;
+            }
         }
     }
 }

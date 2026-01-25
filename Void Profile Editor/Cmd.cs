@@ -14,9 +14,12 @@ namespace Void_Profile_Editor
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             Document doc = commandData.Application.ActiveUIDocument.Document;
+
             // выбираем семейство продавливания
             var selectionService = new SelectionService(commandData);
             FamilyInstance element = selectionService.PickObject();
+            if (element == null)
+                return Result.Cancelled;
 
             // получаем информацию о семействе
             var pressureCountourService = new PressureCounturInformationService(commandData, new GeometryService());
@@ -24,7 +27,7 @@ namespace Void_Profile_Editor
 
             // создаем контур на расстоянии 6h0 от площади на которую действует продавливающая сила            
             var createContourService = new CreateContourService(new GeometryService());
-            var contour6h0 = createContourService.Create(
+            var contour6H0 = createContourService.Create(
                 pressureContour.Value.InsertPoint,
                 pressureContour.Value.Rotation,
                 pressureContour.Value.H0,
@@ -36,36 +39,49 @@ namespace Void_Profile_Editor
                 pressureContour.Value.Rotation,
                 pressureContour.Value.H0,
                 pressureContour.Value.WallThickness,
-                pressureContour.Value.H0,
+                pressureContour.Value.H0 / 2,
                 element.Mirrored);
 
 
             // рисуем контур
-            using (var t=new Transaction(doc,"Контуры"))
+            using (var t = new Transaction(doc, "Контуры"))
             {
                 t.Start();
-                var drawLineService=new DrawLineService(commandData);
-                drawLineService.DrawLine(line:contour6h0.Value.Bottom,transaction: t);
-                drawLineService.DrawLine(line: contour6h0.Value.Left, transaction: t);
-                drawLineService.DrawLine(line: contour6h0.Value.Right, transaction: t);
+                var drawLineService = new DrawLineService(commandData);
+                drawLineService.DrawLine(line: contour6H0.Value.Bottom, transaction: t);
+                drawLineService.DrawLine(line: contour6H0.Value.Left, transaction: t);
+                drawLineService.DrawLine(line: contour6H0.Value.Right, transaction: t);
+                drawLineService.DrawLine(line: contourH0.Value.Bottom, transaction: t);
                 drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
-                drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
-                drawLineService.DrawLine(line: contourH0.Value.Right, transaction: t);
+                drawLineService.DrawLine(line: contourH0.Value.Left, transaction: t);
 
                 t.Commit();
             }
 
             // выбирааем точку
             XYZ point = selectionService.PickPoint();
+            if (point == null)
+                return Result.Cancelled;
+            var pointNullZ = new XYZ(
+                point.X,
+                point.Y,
+                0);
             // строим отсекующую линию 
-            Line cutingLine = Line.CreateBound(point, (pressureCountourService.GetCenterPressureContur(pressureContour.Value)).Value);
-            // ищем пересечения
-            foreach (var line in contourH0.Value)
+            Line cutingLine = Line.CreateBound(pointNullZ, (pressureCountourService.GetCenterPressureContur(pressureContour.Value)).Value);
+            using (var t = new Transaction(doc, "Секущая линия"))
             {
-                line.Value.Intersect(cutingLine);
+                t.Start();
+                var drawLineService = new DrawLineService(commandData);
+                drawLineService.DrawLine(line: cutingLine, transaction: t);
+                t.Commit();
             }
 
-            
+            // ищем пересечения
+            GeometryService  geometryService = new GeometryService();
+            string sideContour;
+            geometryService.LineWithContourIntersection(cutingLine, contourH0.Value, out sideContour);
+
+
             //TaskDialog.Show("debug", debugInfo);
 
 
@@ -73,6 +89,6 @@ namespace Void_Profile_Editor
             return Result.Succeeded;
         }
 
-        
+
     }
 }
