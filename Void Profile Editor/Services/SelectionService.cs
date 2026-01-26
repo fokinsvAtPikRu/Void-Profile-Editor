@@ -1,10 +1,11 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using Void_Profile_Editor.Abstraction;
 
 namespace Void_Profile_Editor.Services
 {
-    public class SelectionService
+    public class SelectionService : ISelectionService
     {
         ExternalCommandData _commandData;
         public SelectionService(ExternalCommandData commandData)
@@ -12,7 +13,7 @@ namespace Void_Profile_Editor.Services
             _commandData = commandData;
         }
 
-        public FamilyInstance PickObject()
+        public CSharpFunctionalExtensions.Result<FamilyInstance> PickObject()
         {
             try
             {
@@ -26,7 +27,7 @@ namespace Void_Profile_Editor.Services
             }
         }
 
-        public XYZ PickPoint()
+        public CSharpFunctionalExtensions.Result<XYZ> PickPoint()
         {
             try
             {
