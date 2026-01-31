@@ -2,27 +2,28 @@
 using System;
 using System.Linq;
 using Autodesk.Revit.DB;
+using Void_Profile_Editor.Abstraction;
 
 namespace Void_Profile_Editor.Services
 {
-    public class DrawLineService
+    public class DrawLineService : IDrawLineService
     {
-        private ExternalCommandData _commandData;
-        public DrawLineService(ExternalCommandData commandData)
+        private Document _document;
+        public DrawLineService(Document document)
         {
-            _commandData = commandData;
+            _document = document;
         }
         public CSharpFunctionalExtensions.Result DrawLine(Line line, Transaction transaction = null, View view = null, string lineStyleName = "Тонкие линии")
         {
-            Document doc = _commandData.Application.ActiveUIDocument.Document;
+            
             if (transaction == null)
                 throw new InvalidOperationException("Метод может вызван только внутри транзакции");
             if (view == null)
-                view = doc.ActiveView;            
-            DetailLine detailLine = doc.Create.NewDetailCurve(view, line) as DetailLine;
+                view = _document.ActiveView;            
+            DetailLine detailLine = _document.Create.NewDetailCurve(view, line) as DetailLine;
             if (detailLine != null)
             {
-                GraphicsStyle lineStyle = GetLineStyleByName(doc, lineStyleName);
+                GraphicsStyle lineStyle = GetLineStyleByName(_document, lineStyleName);
                 if (lineStyle != null)
                 {
                     detailLine.LineStyle = lineStyle;

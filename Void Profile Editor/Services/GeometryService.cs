@@ -2,10 +2,11 @@
 using Autodesk.Revit.UI;
 using Void_Profile_Editor.Model;
 using CSharpFunctionalExtensions;
+using Void_Profile_Editor.Abstraction;
 
 namespace Void_Profile_Editor.Services
 {
-    public class GeometryService
+    public class GeometryService :IGeometryService
     {        
         /// <summary>
         /// вычисление координаты точки с учетом Rotation вокруг LocationPoint

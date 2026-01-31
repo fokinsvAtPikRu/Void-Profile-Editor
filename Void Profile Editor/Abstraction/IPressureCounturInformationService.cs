@@ -10,7 +10,7 @@ namespace Void_Profile_Editor.Abstraction
 {
     public interface IPressureCounturInformationService
     {
-        CSharpFunctionalExtensions.Result<PressureContour> CreatePressureConturInfo(FamilyInstance instance);
-        CSharpFunctionalExtensions.Result<XYZ> GetCenterPressureContur(PressureContour contour);
+        CSharpFunctionalExtensions.Result<PressureContour> CreatePressureContourInfo(FamilyInstance instance);
+        XYZ GetCenterPressureContur(PressureContour contour);
     }
 }

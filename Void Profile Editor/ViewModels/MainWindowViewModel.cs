@@ -1,10 +1,10 @@
 ﻿using Autodesk.Revit.DB;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CSharpFunctionalExtensions;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Abstraction;
 using Void_Profile_Editor.Model;
-using Void_Profile_Editor.Services;
 
 namespace Void_Profile_Editor.ViewModels
 {
@@ -12,7 +12,7 @@ namespace Void_Profile_Editor.ViewModels
     {
         // RevitTask
         private RevitTask _revitTask;
-        
+
         // Services
         private readonly ISelectionService _selectionService;
         private readonly IPressureCounturInformationService _pressureCounturInformationService;
@@ -37,8 +37,8 @@ namespace Void_Profile_Editor.ViewModels
         {
             _revitTask = revitTask;
             _selectionService = selection;
-            _pressureCounturInformationService=pressureCounturInformationService;
-            _createContourService= createContourService;
+            _pressureCounturInformationService = pressureCounturInformationService;
+            _createContourService = createContourService;
             _selectFamilyInstanceCommand = new AsyncRelayCommand(SelectFamilyInstance);
         }
 
@@ -55,20 +55,32 @@ namespace Void_Profile_Editor.ViewModels
         // Method Execute for SelectFamilyInstanceCommand
         private async Task SelectFamilyInstance()
         {
-            CSharpFunctionalExtensions.Result<FamilyInstance> resultSelectInstance = await _revitTask.Run<CSharpFunctionalExtensions.Result<FamilyInstance>>(app =>
-                  _selectionService.PickObject());
-            if (resultSelectInstance.IsSuccess)
-            {
-                _instance = resultSelectInstance.Value;
-                var  resultCreatePressureContourInfo= _pressureCounturInformationService.CreatePressureConturInfo(_instance);
-                if (resultCreatePressureContourInfo.IsSuccess) 
-                    _pressureContour=resultCreatePressureContourInfo.Value;
-            }
+            await SelectInstance().
+                 Bind(SetInstance).
+                 Bind(CreatePressureContourInfo).
+                 Tap(SetPressureContour);            
         }
+        private async Task<CSharpFunctionalExtensions.Result<FamilyInstance>> SelectInstance() =>
+            await _revitTask.Run<CSharpFunctionalExtensions.Result<FamilyInstance>>(app => _selectionService.PickObject());
+        private CSharpFunctionalExtensions.Result<FamilyInstance> SetInstance(FamilyInstance instance)
+        {
+            _instance = instance;
+            return _instance;
+        }
+        private CSharpFunctionalExtensions.Result<PressureContour> CreatePressureContourInfo(FamilyInstance instance) => 
+            _pressureCounturInformationService.CreatePressureContourInfo(_instance);
+        private void SetPressureContour(PressureContour pressureContour)
+        {
+            _pressureContour = pressureContour;
+        }
+
         // Method Execute for CreateContourCommand
         private async Task CreateContour()
         {
-            CSharpFunctionalExtensions.Result<Contour> result = await _revitTask.Run<CSharpFunctionalExtensions.Result<Contour>>
+            await Create6H0Contour();
+        }
+        private async Task<CSharpFunctionalExtensions.Result<Contour>> Create6H0Contour() =>
+            await _revitTask.Run<CSharpFunctionalExtensions.Result<Contour>>
                 (app => _createContourService.Create(
                 _pressureContour.InsertPoint,
                 _pressureContour.Rotation,
@@ -76,6 +88,10 @@ namespace Void_Profile_Editor.ViewModels
                 _pressureContour.WallThickness,
                 6 * _pressureContour.H0,
                 _instance.Mirrored));
+        private async Task<CSharpFunctionalExtensions.Result> Draw6H0Contour(Contour contour)
+        {
+            await _revitTask.Run
         }
+
     }
 }

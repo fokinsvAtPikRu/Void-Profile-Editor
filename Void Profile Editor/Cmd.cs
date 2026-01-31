@@ -1,6 +1,7 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using RxBim.Command.Revit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ using Void_Profile_Editor.Services;
 namespace Void_Profile_Editor
 {
     [Transaction(TransactionMode.Manual)]
-    public class Class1 : IExternalCommand
+    public class Cmd : RxBimCommand
     {
-        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        public Result Execute(IServiceProvider provider)
         {
             Document doc = commandData.Application.ActiveUIDocument.Document;
 
@@ -23,7 +24,7 @@ namespace Void_Profile_Editor
 
             // получаем информацию о семействе
             var pressureCountourService = new PressureCounturInformationService(commandData, new GeometryService());
-            var pressureContour = pressureCountourService.CreatePressureConturInfo(element);
+            var pressureContour = pressureCountourService.CreatePressureContourInfo(element);
 
             // создаем контур на расстоянии 6h0 от площади на которую действует продавливающая сила            
             var createContourService = new CreateContourService(new GeometryService());
