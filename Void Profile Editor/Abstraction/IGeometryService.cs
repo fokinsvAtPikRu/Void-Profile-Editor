@@ -11,6 +11,6 @@ namespace Void_Profile_Editor.Abstraction
     public interface IGeometryService
     {
         XYZ RotatePointAroundAxis(XYZ point, XYZ center, XYZ axis, double angle);
-        CSharpFunctionalExtensions.Result<XYZ> LineWithContourIntersection(Line line, Contour contour, out string contourSide);
+        CSharpFunctionalExtensions.Result<XYZ> LineWithContourIntersection(Line line, Contour contour, out ContourSideName contourSide);
     }
 }

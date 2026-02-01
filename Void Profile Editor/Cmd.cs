@@ -67,7 +67,7 @@ namespace Void_Profile_Editor
                 point.X,
                 point.Y,
                 0);
-            // строим отсекующую линию 
+            // строим отсекающую линию 
             Line cutingLine = Line.CreateBound(pointNullZ, (pressureCountourService.GetCenterPressureContur(pressureContour.Value)).Value);
             using (var t = new Transaction(doc, "Секущая линия"))
             {

@@ -8,17 +8,32 @@ using System.Threading.Tasks;
 
 namespace Void_Profile_Editor.Model
 {
-    public class Contour : IEnumerable<KeyValuePair<string, Line>>
+    public class Contour : IEnumerable<KeyValuePair<ContourSideName, Line>>
     {
         public Line Bottom { get; set; }
         public Line Left { get; set; }
         public Line Right { get; set; }
 
-        public IEnumerator<KeyValuePair<string, Line>> GetEnumerator()
+        public Line GetLine(ContourSideName side)
         {
-            yield return new KeyValuePair<string, Line>("Bottom", Bottom);
-            yield return new KeyValuePair<string, Line>("Left", Left);
-            yield return new KeyValuePair<string, Line>("Right", Right);
+            switch (side)
+            {
+                case ContourSideName.Bottom :
+                    return Bottom;
+                case ContourSideName.Left :
+                    return Left;
+                case ContourSideName.Right :
+                    return Right;
+                    default:
+                    return null;
+            };
+        }
+
+        public IEnumerator<KeyValuePair<ContourSideName, Line>> GetEnumerator()
+        {
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Left, Left);
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Bottom, Bottom);
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Right, Right);           
         }
 
         IEnumerator IEnumerable.GetEnumerator()

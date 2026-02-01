@@ -31,7 +31,7 @@ namespace Void_Profile_Editor.Services
             return rotatedTranslatedPoint + center;
         }
 
-        public CSharpFunctionalExtensions.Result<XYZ> LineWithContourIntersection(Line line, Contour contour, out string contourSide)
+        public CSharpFunctionalExtensions.Result<XYZ> LineWithContourIntersection(Line line, Contour contour, out ContourSideName contourSide)
         {
             IntersectionResultArray result;
             foreach (var contourLine in contour)
@@ -42,13 +42,12 @@ namespace Void_Profile_Editor.Services
                     if (result.Size == 1)
                     {
                         contourSide = contourLine.Key;
-                        return result.get_Item(0).XYZPoint;
-                        
+                        return result.get_Item(0).XYZPoint;                        
                     }
                 }
             }
-            contourSide = null;
-            return null;
+            contourSide=ContourSideName.NoIntersection;
+            return CSharpFunctionalExtensions.Result.Failure<XYZ>("Пересечения с контуром не найдены");
         }
     }
 }
