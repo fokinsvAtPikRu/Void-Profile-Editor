@@ -12,5 +12,6 @@ namespace Void_Profile_Editor.Abstraction
     {
         CSharpFunctionalExtensions.Result<PressureContour> CreatePressureContourInfo(FamilyInstance instance);
         XYZ GetCenterPressureContur(PressureContour contour);
+        CSharpFunctionalExtensions.Result UpdateParameters(Document doc, FamilyInstance instance, PressureContourParameters parameters);
     }
 }

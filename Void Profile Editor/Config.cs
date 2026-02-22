@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Abstraction;
 using Void_Profile_Editor.Services;
+using Void_Profile_Editor.ViewModels;
+using Void_Profile_Editor.Views;
 
 namespace Void_Profile_Editor
 {
@@ -15,12 +17,29 @@ namespace Void_Profile_Editor
     {
         public void Configure(IServiceCollection services)
         {
+            // MyServices
             services.AddSingleton<RevitTask>(new RevitTask());
-            services.AddSingleton<ISelectionService, SelectionService>();
-            services.AddSingleton<IPressureCounturInformationService, PressureCounturInformationService>();
-            services.AddSingleton<ISelectionService, SelectionService>();
+            services.AddSingleton<ICreateContourService, CreateContourService>();
             services.AddSingleton<IDrawLineService, DrawLineService>();
             services.AddSingleton<IGeometryService, GeometryService>();
+            services.AddSingleton<IPressureCounturInformationService, PressureCounturInformationService>();
+            services.AddSingleton<ISelectionService, SelectionService>();
+            // Window Service
+            services.AddSingleton<IWindowService, WindowService>();
+            // View Model
+            services.AddSingleton<MainWindowViewModel>();
+            // Main Window
+            services.AddSingleton<MainWindow>(provider =>
+            {
+                var viewModel = provider.GetRequiredService<MainWindowViewModel>();
+
+                var window = ActivatorUtilities.CreateInstance<MainWindow>(provider, viewModel);
+
+                var windowService = provider.GetRequiredService<IWindowService>() as WindowService;
+                windowService?.SetWindow(window);
+
+                return window;
+            });
 
         }
     }

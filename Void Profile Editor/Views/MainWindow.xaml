@@ -11,6 +11,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
@@ -31,7 +32,10 @@
              Grid.Row="2"
              Margin="10" Padding="10"
              Content="Построить секущие линии" 
-             FontSize="20"/>
+             FontSize="20"
+             Command="{Binding CreateCutingLinesCommand}"/>
+        
+
 
     </Grid>
 </Window>

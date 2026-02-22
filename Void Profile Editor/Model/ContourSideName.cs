@@ -8,9 +8,9 @@ namespace Void_Profile_Editor.Model
 {
     public enum ContourSideName
     {
-        Left,
-        Bottom,
-        Right,
-        NoIntersection
+        Left = 1,
+        Bottom = 2,
+        Right=3,
+        NoIntersection=0
     }
 }

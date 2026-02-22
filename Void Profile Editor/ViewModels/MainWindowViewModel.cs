@@ -1,4 +1,5 @@
 ﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging.Messages;
@@ -38,6 +39,12 @@ namespace Void_Profile_Editor.ViewModels
         private Contour _contour6H0;
         private Contour _contourHalfH0;
         private Line[] _cuttingLines;
+        private IntersectionPoint[] _intersectionPoints;
+
+
+
+
+
         #endregion
         #region ctor
         public MainWindowViewModel(
@@ -52,6 +59,8 @@ namespace Void_Profile_Editor.ViewModels
             // Fields
             _revitTask = revitTask;
             _document = document;
+
+
             // Services
             _selectionService = selection;
             _pressureCounturInformationService = pressureCounturInformationService;
@@ -60,7 +69,9 @@ namespace Void_Profile_Editor.ViewModels
             _geometryService = geometryService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
-            _createContourCommand = new AsyncRelayCommand(CreateContour);
+            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour);
+            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines);
+
         }
         #endregion
         #region Properties for Command
@@ -86,10 +97,12 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void SelectFamilyInstance()
         {
-            _selectionService.PickObject().
-            Bind((instance) => { _instance = instance; return CSharpFunctionalExtensions.Result.Success<FamilyInstance>(instance); }).
-            Bind(_pressureCounturInformationService.CreatePressureContourInfo).
-            Bind((pressureContour) => { _pressureContour = pressureContour; return CSharpFunctionalExtensions.Result.Success(); });
+            var result = _selectionService.PickObject().
+                        Tap(instance => _instance = instance).
+                        Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i)).
+                        Tap(pc => _pressureContour = pc);
+            if (result.IsFailure)            
+                TaskDialog.Show("Test", $"Error:{result.Error}");
         }
 
         #endregion
@@ -101,18 +114,30 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateContour()
         {
-            Create6H0Contour().
-            Bind(DrawContour).
-            Bind(() => CreateHalfH0Contour());
+            if (_instance == null)
+            {
+                TaskDialog.Show("Ошибка", "Семейство не выбрано");
+                return;
+            }
+            if (_pressureContour == null)
+            {
+                TaskDialog.Show("Ошибка", "Контур не создан");
+                return;
+            }
+            var result = Create6H0Contour().
+                        Bind(c => DrawContour(c)).
+                        Bind(() => CreateHalfH0Contour());
+            if (result.IsFailure)
+                TaskDialog.Show("Test", $"Error:{result.Error}");
         }
         private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour()
         {
             _contour6H0 = _createContourService.Create(
                 _pressureContour.InsertPoint,
                 _pressureContour.Rotation,
-                _pressureContour.H0,
-                _pressureContour.WallThickness,
-                6 * _pressureContour.H0,
+                _pressureContour.ContourParameters.DoubleParameters["h0"],
+                _pressureContour.ContourParameters.DoubleParameters["Толщина"],
+                6 * _pressureContour.ContourParameters.DoubleParameters["h0"],
                 _instance.Mirrored).Value;
             return CSharpFunctionalExtensions.Result.Success<Contour>(_contour6H0);
         }
@@ -121,9 +146,9 @@ namespace Void_Profile_Editor.ViewModels
             _contourHalfH0 = _createContourService.Create(
                _pressureContour.InsertPoint,
                _pressureContour.Rotation,
-               _pressureContour.H0,
-               _pressureContour.WallThickness,
-               0.5 * _pressureContour.H0,
+               _pressureContour.ContourParameters.DoubleParameters["h0"],
+               _pressureContour.ContourParameters.DoubleParameters["Толщина"],
+               0.5 * _pressureContour.ContourParameters.DoubleParameters["h0"],
                _instance.Mirrored).Value;
             return CSharpFunctionalExtensions.Result.Success<Contour>(_contourHalfH0);
         }
@@ -135,7 +160,11 @@ namespace Void_Profile_Editor.ViewModels
                 {
                     tr.Start();
                     foreach (var line in contour)
+                    {
+                        if (line.Key==ContourSideName.NoIntersection)
+                            continue;
                         _drawLineService.DrawLine(line.Value, tr);
+                    }
                     tr.Commit();
                 }
                 return CSharpFunctionalExtensions.Result.Success();
@@ -153,45 +182,97 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateCuttingLines()
         {
-            _selectionService.PickPoint().
-                Bind((point) =>
+            // указываем первую точку для создания секущей линии 
+            _selectionService.PickPoint()
+                // обнуляем координату Z у точки 
+                .Bind((point) =>
                 {
                     return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                }).
-                Bind((point) =>
+                })
+                // строим первую секущую линию
+                .Bind((point) =>
                 {
-                    if (_cuttingLines == null)
-                        _cuttingLines = new Line[2];
-                    _cuttingLines[0] = Line.CreateBound(point, _pressureContour.Center);
+                    if (_contourHalfH0 == null)
+                        return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
+                    _cuttingLines = new Line[2];
+                    _cuttingLines[0] = Line.CreateBound(point, _contourHalfH0.Center);
                     return CSharpFunctionalExtensions.Result.Success();
-                }).
-                Bind(() => _selectionService.PickPoint()).
-                Bind((point) =>
+                })
+                // test method
+                .Bind(()=>
+                {
+                    using(Transaction tr=new Transaction(_document,"Draw Cutting Line"))
+                    {
+                        tr.Start();
+                        if (_cuttingLines == null)
+                            tr.RollBack();
+                        else
+                            _drawLineService.DrawLine(_cuttingLines[0], tr);
+                        tr.Commit();
+                    }
+                    return CSharpFunctionalExtensions.Result.Success();
+                })
+                // повторяем, строим вторую секущую линию
+                .Bind(() => _selectionService.PickPoint())
+                .Bind((point) =>
                 {
                     return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                }).
-                Bind((point) =>
+                })
+                .Bind((point) =>
                 {
-                    _cuttingLines[1] = Line.CreateBound(point, _pressureContour.Center);
+                    _cuttingLines[1] = Line.CreateBound(point, _contourHalfH0.Center);
                     return CSharpFunctionalExtensions.Result.Success();
-                }).
-        }
-        private void FindIntersection()
-        {
-            XYZ[] points=new XYZ[2];            
-            ContourSideName[] sideName=new ContourSideName[2];
+                })
+                // test method
+                .Bind(() =>
+                {
+                    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                    {
+                        tr.Start();
+                        if (_cuttingLines == null)
+                            tr.RollBack();
+                        else
+                            _drawLineService.DrawLine(_cuttingLines[1], tr);
+                        tr.Commit();
+                    }
+                    return CSharpFunctionalExtensions.Result.Success();
+                })
+                // ищем точки пересечения секущих линий с контуром 0.5H0
+                .Bind(() => FindIntersection())
+                //// test method
+                //.Bind(() =>
+                //{
+                //    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                //    {
+                //        tr.Start();
+                //        if (_cuttingLines == null)
+                //            tr.RollBack();
+                //        else                            
+                //            _drawLineService.DrawLine(Line.CreateBound(_intersectionPoints[0].Point, _intersectionPoints[1].Point), tr);
+                //        tr.Commit();
+                //    }
+                //    return CSharpFunctionalExtensions.Result.Success();
+                //})
+                // вычисляем параметры
+                .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
+                // сохраняем параметры
+                .Bind(()=>_pressureCounturInformationService.UpdateParameters(_document,_instance,_pressureContour.ContourParameters));
 
+        }
+        private CSharpFunctionalExtensions.Result FindIntersection()
+        {
+            if (_contourHalfH0 == null)
+                return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
+            if (_cuttingLines == null)
+                return CSharpFunctionalExtensions.Result.Failure("Секущие линии не созданы");
+            _intersectionPoints = new IntersectionPoint[2];
             for (var i = 0; i < 2; i++)
             {
-                var result = _geometryService.LineWithContourIntersection(_cuttingLines[i], _contourHalfH0, out sideName[i]);
+                var result = _geometryService.LineWithContourIntersection(_cuttingLines[i], _contourHalfH0);
                 if (result.IsSuccess)
-                    points[i] = result.Value;
+                    _intersectionPoints[i] = result.Value;
             }
-            if (sideName[0] != null && sideName[0] == sideName[1])
-            {
-                var contourLine = _contourHalfH0.GetLine(sideName[0]);
-
-            }
+            return CSharpFunctionalExtensions.Result.Success();
         }
         #endregion
     }

@@ -13,6 +13,8 @@ namespace Void_Profile_Editor.Model
         public Line Bottom { get; set; }
         public Line Left { get; set; }
         public Line Right { get; set; }
+        public Line Top {get; set; }
+        public XYZ Center { get; set; }
 
         public Line GetLine(ContourSideName side)
         {
@@ -24,7 +26,9 @@ namespace Void_Profile_Editor.Model
                     return Left;
                 case ContourSideName.Right :
                     return Right;
-                    default:
+                case ContourSideName.NoIntersection:
+                    return Top;
+                default:
                     return null;
             };
         }
@@ -34,6 +38,7 @@ namespace Void_Profile_Editor.Model
             yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Left, Left);
             yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Bottom, Bottom);
             yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Right, Right);           
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.NoIntersection, Top);           
         }
 
         IEnumerator IEnumerable.GetEnumerator()

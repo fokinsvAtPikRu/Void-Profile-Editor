@@ -2,6 +2,7 @@
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Void_Profile_Editor.Abstraction;
+using Void_Profile_Editor.Model;
 
 namespace Void_Profile_Editor.Services
 {
