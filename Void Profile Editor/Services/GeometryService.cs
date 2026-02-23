@@ -1,11 +1,7 @@
 ﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
 using Void_Profile_Editor.Model;
-using CSharpFunctionalExtensions;
 using Void_Profile_Editor.Abstraction;
 using System;
-using JetBrains.Annotations;
-using System.Windows.Markup.Localizer;
 
 namespace Void_Profile_Editor.Services
 {
@@ -45,18 +41,16 @@ namespace Void_Profile_Editor.Services
                     SetComparisonResult comparison = contourLine.Value.Intersect(lines[i], out result);
                     if (result != null)
                     {
-                        if (result.Size == 1)
+                        if (result.Size != 1)
                         {
-                            results[i] = new IntersectionPoint(result.get_Item(0).XYZPoint, contourLine.Key);
+                            return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Точек пересечения больше одной");                            
                         }
-                        return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Точек пересечения больше одной");
+                        results[i] = new IntersectionPoint(result.get_Item(0).XYZPoint, contourLine.Key);                        
                     }
                 }
             }
             return CSharpFunctionalExtensions.Result.Success<IntersectionPoint[]>(results);
         }
-
-
 
         public CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
         {

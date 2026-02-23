@@ -182,81 +182,88 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateCuttingLines()
         {
-            // указываем первую точку для создания секущей линии 
-            _selectionService.PickPoint()
-                // обнуляем координату Z у точки 
-                .Bind((point) =>
-                {
-                    return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                })
-                // строим первую секущую линию
-                .Bind((point) =>
-                {
-                    if (_contourHalfH0 == null)
-                        return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
-                    _cuttingLines = new Line[2];
-                    _cuttingLines[0] = Line.CreateBound(point, _contourHalfH0.Center);
-                    return CSharpFunctionalExtensions.Result.Success();
-                })
-                // test method
-                .Bind(() =>
-                {
-                    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+            try
+            {
+                // указываем первую точку для создания секущей линии 
+                _selectionService.PickPoint()
+                    // обнуляем координату Z у точки 
+                    .Bind((point) =>
                     {
-                        tr.Start();
-                        if (_cuttingLines == null)
-                            tr.RollBack();
-                        else
-                            _drawLineService.DrawLine(_cuttingLines[0], tr);
-                        tr.Commit();
-                    }
-                    return CSharpFunctionalExtensions.Result.Success();
-                })
-                // повторяем, строим вторую секущую линию
-                .Bind(() => _selectionService.PickPoint())
-                .Bind((point) =>
-                {
-                    return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                })
-                .Bind((point) =>
-                {
-                    _cuttingLines[1] = Line.CreateBound(point, _contourHalfH0.Center);
-                    return CSharpFunctionalExtensions.Result.Success();
-                })
-                // test method
-                .Bind(() =>
-                {
-                    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                        return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
+                    })
+                    // строим первую секущую линию
+                    .Bind((point) =>
                     {
-                        tr.Start();
-                        if (_cuttingLines == null)
-                            tr.RollBack();
-                        else
-                            _drawLineService.DrawLine(_cuttingLines[1], tr);
-                        tr.Commit();
-                    }
-                    return CSharpFunctionalExtensions.Result.Success();
-                })
-                // ищем точки пересечения секущих линий с контуром 0.5H0
-                .Bind(() => FindIntersection())
-                //// test method
-                //.Bind(() =>
-                //{
-                //    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
-                //    {
-                //        tr.Start();
-                //        if (_cuttingLines == null)
-                //            tr.RollBack();
-                //        else                            
-                //            _drawLineService.DrawLine(Line.CreateBound(_intersectionPoints[0].Point, _intersectionPoints[1].Point), tr);
-                //        tr.Commit();
-                //    }
-                //    return CSharpFunctionalExtensions.Result.Success();
-                //})
-                // вычисляем параметры
-                .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
-                // сохраняем параметры
-                .Bind(() => _pressureCounturInformationService.UpdateParameters(_document, _instance, _pressureContour.ContourParameters));
+                        if (_contourHalfH0 == null)
+                            return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
+                        _cuttingLines = new Line[2];
+                        _cuttingLines[0] = Line.CreateBound(point, _contourHalfH0.Center);
+                        return CSharpFunctionalExtensions.Result.Success();
+                    })
+                    // test method
+                    .Bind(() =>
+                    {
+                        using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                        {
+                            tr.Start();
+                            if (_cuttingLines == null)
+                                tr.RollBack();
+                            else
+                                _drawLineService.DrawLine(_cuttingLines[0], tr);
+                            tr.Commit();
+                        }
+                        return CSharpFunctionalExtensions.Result.Success();
+                    })
+                    // повторяем, строим вторую секущую линию
+                    .Bind(() => _selectionService.PickPoint())
+                    .Bind((point) =>
+                    {
+                        return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
+                    })
+                    .Bind((point) =>
+                    {
+                        _cuttingLines[1] = Line.CreateBound(point, _contourHalfH0.Center);
+                        return CSharpFunctionalExtensions.Result.Success();
+                    })
+                    // test method
+                    .Bind(() =>
+                    {
+                        using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                        {
+                            tr.Start();
+                            if (_cuttingLines == null)
+                                tr.RollBack();
+                            else
+                                _drawLineService.DrawLine(_cuttingLines[1], tr);
+                            tr.Commit();
+                        }
+                        return CSharpFunctionalExtensions.Result.Success();
+                    })
+                    // ищем точки пересечения секущих линий с контуром 0.5H0
+                    .Bind(() => FindIntersection())
+                    //// test method
+                    //.Bind(() =>
+                    //{
+                    //    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
+                    //    {
+                    //        tr.Start();
+                    //        if (_cuttingLines == null)
+                    //            tr.RollBack();
+                    //        else                            
+                    //            _drawLineService.DrawLine(Line.CreateBound(_intersectionPoints[0].Point, _intersectionPoints[1].Point), tr);
+                    //        tr.Commit();
+                    //    }
+                    //    return CSharpFunctionalExtensions.Result.Success();
+                    //})
+                    // вычисляем параметры
+                    .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
+                    // сохраняем параметры
+                    .Bind(() => _pressureCounturInformationService.UpdateParameters(_document, _instance, _pressureContour.ContourParameters));
+            }
+            catch (Exception ex)
+            {
+                TaskDialog.Show("Error", $"Error:{ex.Message}");
+            }
 
         }
         private CSharpFunctionalExtensions.Result FindIntersection()
