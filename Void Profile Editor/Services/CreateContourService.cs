@@ -43,7 +43,8 @@ namespace Void_Profile_Editor.Services
                 XYZ topLeft = new XYZ
                     (locationPoint.X - thickness / 2 - offset,
                     locationPoint.Y + thickness + 0.5 * h0,
-                    0);                
+                    0);
+                XYZ topMiddle = (topRight + topLeft) / 2;
 
                 rotationAngle = isMirrored ? (rotationAngle - Math.PI) % (2 * Math.PI) : rotationAngle % (2 * Math.PI);
                 // поворачиваем контур
@@ -51,16 +52,19 @@ namespace Void_Profile_Editor.Services
                 bottomLeft = _geometryService.RotatePointAroundAxis(bottomLeft, locationPoint, XYZ.BasisZ, rotationAngle);
                 topRight = _geometryService.RotatePointAroundAxis(topRight, locationPoint, XYZ.BasisZ, rotationAngle);
                 topLeft = _geometryService.RotatePointAroundAxis(topLeft, locationPoint, XYZ.BasisZ, rotationAngle);
+                topMiddle = _geometryService.RotatePointAroundAxis(topMiddle, locationPoint, XYZ.BasisZ, rotationAngle);
+
                 IntersectionResultArray results = null;
                 SetComparisonResult comparison = Line.CreateBound(bottomLeft, topRight).Intersect(Line.CreateBound(topLeft, bottomRight), out results);
                 if (comparison == SetComparisonResult.Overlap && results != null && results.Size > 0)
                 {
                     Contour contour = new Contour()
                     {
-                        Bottom = Line.CreateBound(bottomLeft, bottomRight),
+                        TopLeft = Line.CreateBound(topMiddle, topLeft),
                         Left = Line.CreateBound(topLeft, bottomLeft),
+                        Bottom = Line.CreateBound(bottomLeft, bottomRight),                        
                         Right = Line.CreateBound(bottomRight, topRight),
-                        Top = Line.CreateBound(topLeft, topRight),
+                        TopRight = Line.CreateBound(topRight, topMiddle),
                         Center = results.get_Item(0).XYZPoint
 
                     };

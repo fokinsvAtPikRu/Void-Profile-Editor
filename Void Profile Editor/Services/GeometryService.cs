@@ -34,162 +34,86 @@ namespace Void_Profile_Editor.Services
             return rotatedTranslatedPoint + center;
         }
 
-        public CSharpFunctionalExtensions.Result<IntersectionPoint> LineWithContourIntersection(Line line, Contour contour)
+        public CSharpFunctionalExtensions.Result<IntersectionPoint[]> LineWithContourIntersection(Line[] lines, Contour contour)
         {
+            IntersectionPoint[] results = new IntersectionPoint[2];
             IntersectionResultArray result;
             foreach (var contourLine in contour)
             {
-                SetComparisonResult comparison = contourLine.Value.Intersect(line, out result);
-                if (result != null)
+                for (var i = 0; i < 2; i++)
                 {
-                    if (result.Size == 1)
+                    SetComparisonResult comparison = contourLine.Value.Intersect(lines[i], out result);
+                    if (result != null)
                     {
-                        return new IntersectionPoint(result.get_Item(0).XYZPoint, contourLine.Key);
+                        if (result.Size == 1)
+                        {
+                            results[i] = new IntersectionPoint(result.get_Item(0).XYZPoint, contourLine.Key);
+                        }
+                        return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Точек пересечения больше одной");
                     }
-                    return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint>("Точек пересечения больше одной");
                 }
             }
-            return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint>("Пересечения с контуром не найдены");
+            return CSharpFunctionalExtensions.Result.Success<IntersectionPoint[]>(results);
         }
 
 
 
         public CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
         {
-            var parameters = pressureContour.ContourParameters;
-            double distance;
-            double offset;
+            var parameters = pressureContour.ContourParameters;            
 
             parameters.IntParameters["Вкл редактирование контура"] = 1;
-
-            switch (points[0].SideName)
+            bool firstPointIsFounded = false;
+            foreach (var edge in contourHalfH0)
             {
-                // если первое пересечение с левой гранью контура
-                case ContourSideName.Left:
-                    switch (points[1].SideName)
+                // флаг первая точка пересечения найдена - ложь и первая точка пересечения не на текущей грани - пропускаем шаг
+                if (edge.Key != points[0].SideName && !firstPointIsFounded)
+                    continue;
+                // первая точка пересечения найдена
+                if (edge.Key == points[0].SideName && !firstPointIsFounded)
+                {
+                    // устанавливаем флаг
+                    firstPointIsFounded = true;
+                    // проверяем вторую точку пеерсечения
+                    if (edge.Key == points[1].SideName)
+                    // если вторая точка на той же грани - задаем отверстие 
                     {
-                        // если второе пересечение с верхней гранью контура - задаем отступ от верхней грани
-                        case ContourSideName.NoIntersection:
-                            // если вторая точка ближе к левой стороне
-                            if (points[1].Point.DistanceTo(contourHalfH0.Left.GetEndPoint(0)) <
-                                points[1].Point.DistanceTo(contourHalfH0.Right.GetEndPoint(1)))
-                            //задаем смещение левой грани сверху
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Left.GetEndPoint(0));
-                                SetOffsetFromEdge(parameters, "Ст1.отступ линии от Ст4", distance);
-                            }
-                            // если вторая точка ближе к правой стороне - задаем смещение левой грани снизу и выключаем нижнюю и левую стороны
-                            else
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Left.GetEndPoint(1));
-                                SetOffsetFromEdge(parameters, "Ст1.отступ линии от Ст2", distance);
-                                parameters.IntParameters["Вкл сторона 2"] = 0;
-                                parameters.IntParameters["Вкл сторона 3"] = 0;
-                            }
-                            break;
-                        // если второе пересечение с левой гранью контура - задаем отверстие на левой грани
-                        case ContourSideName.Left:
-                            distance = CalculateDistance(points[0].Point, points[1].Point);
-                            offset = CalculateOffset(points[0].Point, points[1].Point, contourHalfH0.Left.GetEndPoint(0));
-                            SetHoleOnEdge(parameters, "Ст1.ширина отверстия", "Ст1.смещение отверстия от Ст4", distance, offset);
-                            break;
-                        // если второе пересечение с нижней гранью контура - задаем смещения для левой и нижней граней
-                        case ContourSideName.Bottom:
-                            distance = CalculateDistance(points[0].Point, contourHalfH0.Left.GetEndPoint(1));
-                            SetOffsetFromEdge(parameters, "Ст1.отступ линии от Ст2", distance);
-                            distance = CalculateDistance(points[1].Point, contourHalfH0.Bottom.GetEndPoint(0));
-                            SetOffsetFromEdge(parameters, "Ст2.отступ линии от Ст1", distance);
-                            break;
-                        // если второе пересечение с правой стороной - смещение левой и правой грани снизу, выключаем нижнюю сторону 
-                        case ContourSideName.Right:
-                            distance = CalculateDistance(points[0].Point, contourHalfH0.Left.GetEndPoint(1));
-                            SetOffsetFromEdge(parameters, "Ст1.отступ линии от Ст2", distance);
-                            distance = CalculateDistance(points[1].Point, contourHalfH0.Right.GetEndPoint(0));
-                            SetOffsetFromEdge(parameters, "Ст3.отступ линии от Ст2", distance);
-                            parameters.IntParameters["Вкл сторона 2"] = 0;
-                            break;
+                        var distance = CalculateDistance(points[0].Point, points[1].Point);
+                        var offset = CalculateOffset(points[0].Point, points[1].Point, edge.Value.GetEndPoint(0));
+                        string parameterNameHoleOffset;
+                        string parameterNameHoleWidth;
+                        GetParameterNameForSetHole(edge.Key, out parameterNameHoleWidth, out parameterNameHoleOffset);
+                        // если пересечение с верхней стороной, имена параметров - пустая строка - пропускаем шаг
+                        if (String.IsNullOrEmpty(parameterNameHoleOffset) || String.IsNullOrEmpty(parameterNameHoleWidth))
+                            continue;
+                        SetHoleOnEdge(parameters, parameterNameHoleWidth, parameterNameHoleOffset, distance, offset);
+                        continue;
                     }
-                    break;
-                case ContourSideName.Bottom:
-                    switch (points[1].SideName)
+                    // если вторая точка не на этой грани устанавливаем смещение последней точки грани
+                    else
                     {
-                        // если второе пересечение с верхней гранью контура 
-                        case ContourSideName.NoIntersection:
-                            // если вторая точка ближе к левой стороне
-                            if (points[1].Point.DistanceTo(contourHalfH0.Left.GetEndPoint(0)) <
-                                points[1].Point.DistanceTo(contourHalfH0.Right.GetEndPoint(1)))
-                            //задаем смещение левой грани сверху
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Bottom.GetEndPoint(0));
-                                SetOffsetFromEdge(parameters, "Ст2.отступ линии от Ст1", distance);
-                                parameters.IntParameters["Вкл сторона 1"] = 0;
-                            }
-                            // если вторая точка ближе к правой стороне - задаем смещение левой грани снизу и выключаем нижнюю и левую стороны
-                            else
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Bottom.GetEndPoint(1));
-                                SetOffsetFromEdge(parameters, "Ст2.отступ линии от Ст3", distance);
-                                parameters.IntParameters["Вкл сторона 3"] = 0;
-                            }
-                            break;
-                        // если второе пересечение с левой гранью контура - задаем смещение левой снизу и нижней слева
-                        case ContourSideName.Left:
-                            distance = CalculateDistance(points[1].Point, contourHalfH0.Left.GetEndPoint(1));
-                            SetOffsetFromEdge(parameters, "Ст1.отступ линии от Ст2", distance);
-                            distance = CalculateDistance(points[0].Point, contourHalfH0.Bottom.GetEndPoint(0));
-                            SetOffsetFromEdge(parameters, "Ст2.отступ линии от Ст1", distance);
-                            break;
-                        // если второе пересечение с нижней гранью контура - задаем отверстие на нижней грани
-                        case ContourSideName.Bottom:
-                            distance = CalculateDistance(points[0].Point, points[1].Point);
-                            offset = CalculateOffset(points[0].Point, points[1].Point, contourHalfH0.Bottom.GetEndPoint(0));
-                            SetHoleOnEdge(parameters, "Ст2.ширина отверстия", "Ст2.смещение отверстия от Ст1", distance, offset);
-                            break;
-                        // если второе пересечение с правой гранью контура - задаем смещение правой снизу и нижней справа
-                        case ContourSideName.Right:
-                            distance = CalculateDistance(points[1].Point, contourHalfH0.Right.GetEndPoint(0));
-                            SetOffsetFromEdge(parameters, "Ст3.отступ линии от Ст2", distance);
-                            distance = CalculateDistance(points[0].Point, contourHalfH0.Bottom.GetEndPoint(1));
-                            SetOffsetFromEdge(parameters, "Ст2.отступ линии от Ст3", distance);
-                            break;
+                        var distance = CalculateDistance(points[0].Point, edge.Value.GetEndPoint(1));
+                        string parameterNameOffset = GetParameterNameForOffset(edge.Key, false);
+                        SetOffsetFromEdge(parameters, parameterNameOffset, distance);
+                        continue;
                     }
-                    break;
-                case ContourSideName.Right:
-                    switch (points[1].SideName)
-                    {
-                        // если второе пересечение с верхней гранью контура
-                        case ContourSideName.NoIntersection:
-                            // если вторая точка ближе к левой стороне
-                            if (points[1].Point.DistanceTo(contourHalfH0.Left.GetEndPoint(0)) <
-                                points[1].Point.DistanceTo(contourHalfH0.Right.GetEndPoint(1)))
-                            // задаем смещение правой стороны снизу, выключаем левую и нижнюю грань
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Right.GetEndPoint(0));
-                                SetOffsetFromEdge(parameters, "Ст3.отступ линии от Ст2", distance);
-                                parameters.IntParameters["Вкл сторона 1"] = 0;
-                                parameters.IntParameters["Вкл сторона 2"] = 0;
-                            }
-                            // если вторая точка ближе к правой стороне - задаем смещение правой грани сверху
-                            else
-                            {
-                                distance = CalculateDistance(points[0].Point, contourHalfH0.Right.GetEndPoint(1));
-                                SetOffsetFromEdge(parameters, "Ст3.отступ линии от Ст4", distance);
-                            }
-                            break;
-                            // если второе пересечение с левой гранью
-                            case ContourSideName.Left:
-
-                            break;
-
-                        // если второе пересечение с правой гранью контура - задаем отверстие на правой грани
-                        case ContourSideName.Right:
-                            distance = CalculateDistance(points[0].Point, points[1].Point);
-                            offset = CalculateOffset(points[0].Point, points[1].Point, contourHalfH0.Right.GetEndPoint(1));
-                            SetHoleOnEdge(parameters, "Ст3.ширина отверстия", "Ст3.смещение отверстия от Ст4", distance, offset);
-                            break;
-                    }
-                    break;
-            }
+                }
+                // первая точка пересечения уже найдена, вторая не на текущей стороне - выключаем текущую сторону
+                if (firstPointIsFounded && edge.Key != points[1].SideName)
+                {
+                    string parameterNameSwitchOffEdge= GetParameterNameSwitchOffEdge(edge.Key);
+                    parameters.IntParameters[parameterNameSwitchOffEdge] = 0;
+                    continue;
+                }
+                // первая точка пересечения уже найдена, вторая точка на текущей стороне - задаем смещение от начала
+                if (firstPointIsFounded && edge.Key == points[1].SideName)
+                {
+                    var distance = CalculateDistance(points[1].Point, edge.Value.GetEndPoint(0));
+                    string parameterNameOffset = GetParameterNameForOffset(edge.Key, true);
+                    SetOffsetFromEdge(parameters, parameterNameOffset, distance);
+                    continue;
+                }
+            }            
             return CSharpFunctionalExtensions.Result.Success();
         }
 
@@ -228,7 +152,67 @@ namespace Void_Profile_Editor.Services
                 parameters.DoubleParameters[parameterNameHoleOffset] = offset;
             }
         }
+        private void GetParameterNameForSetHole(ContourSideName edgeName,
+            out string parameterNameHoleWidth,
+            out string parameterNameHoleOffset)
+        {
+            parameterNameHoleOffset = String.Empty;
+            parameterNameHoleWidth = String.Empty;
+            switch (edgeName)
+            {
+                case ContourSideName.Left:
+                    parameterNameHoleOffset = "Ст1.смещение отверстия от Ст4";
+                    parameterNameHoleWidth = "Ст1.ширина отверстия";
+                    break;
+                case ContourSideName.Bottom:
+                    parameterNameHoleOffset = "Ст2.смещение отверстия от Ст1";
+                    parameterNameHoleWidth = "Ст2.ширина отверстия";
+                    break;
+                case ContourSideName.Right:
+                    parameterNameHoleOffset = "Ст3.смещение отверстия от Ст4";
+                    parameterNameHoleWidth = "Ст3.ширина отверстия";
+                    break;
+            }
+        }
 
+        private string GetParameterNameForOffset(ContourSideName edgeName, bool isStartPoint)
+        {
+            string parameterNameOffset = String.Empty;
+            switch (edgeName)
+            {
+                case ContourSideName.Left:
+                    parameterNameOffset = isStartPoint ? "Ст1.отступ линии от Ст4" : "Ст1.отступ линии от Ст2";
+
+                    break;
+                case ContourSideName.Bottom:
+                    parameterNameOffset = isStartPoint ? "Ст2.отступ линии от Ст1" : "Ст2.отступ линии от Ст3";
+
+                    break;
+                case ContourSideName.Right:
+                    parameterNameOffset = isStartPoint ? "Ст3.отступ линии от Ст2" : "Ст3.отступ линии от Ст4";
+
+                    break;
+            }
+            return parameterNameOffset;
+        }
+
+        private string GetParameterNameSwitchOffEdge(ContourSideName edgeName)
+        {
+            string result = String.Empty;
+            switch (edgeName)
+            {
+                case ContourSideName.Left:
+                    result = "Вкл сторона 1";
+                    break;
+                case ContourSideName.Bottom:
+                    result = "Вкл сторона 2";
+                    break;
+                case ContourSideName.Right:
+                    result = "Вкл сторона 3";
+                    break;
+            }
+            return result;
+        }
     }
 }
 

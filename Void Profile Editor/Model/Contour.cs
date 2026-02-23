@@ -13,32 +13,37 @@ namespace Void_Profile_Editor.Model
         public Line Bottom { get; set; }
         public Line Left { get; set; }
         public Line Right { get; set; }
-        public Line Top {get; set; }
+        public Line TopLeft { get; set; }
+        public Line TopRight { get; set; }
         public XYZ Center { get; set; }
 
         public Line GetLine(ContourSideName side)
         {
             switch (side)
             {
-                case ContourSideName.Bottom :
+                case ContourSideName.Bottom:
                     return Bottom;
-                case ContourSideName.Left :
+                case ContourSideName.Left:
                     return Left;
-                case ContourSideName.Right :
+                case ContourSideName.Right:
                     return Right;
-                case ContourSideName.NoIntersection:
-                    return Top;
+                case ContourSideName.TopLeft:
+                    return TopLeft;
+                case ContourSideName.TopRight:
+                    return TopRight;
                 default:
                     return null;
-            };
+            }
+            ;
         }
 
         public IEnumerator<KeyValuePair<ContourSideName, Line>> GetEnumerator()
         {
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.TopLeft, TopLeft);
             yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Left, Left);
             yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Bottom, Bottom);
-            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Right, Right);           
-            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.NoIntersection, Top);           
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.Right, Right);
+            yield return new KeyValuePair<ContourSideName, Line>(ContourSideName.TopRight, TopRight);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

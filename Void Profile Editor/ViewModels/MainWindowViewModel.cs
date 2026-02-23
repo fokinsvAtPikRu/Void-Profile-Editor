@@ -101,7 +101,7 @@ namespace Void_Profile_Editor.ViewModels
                         Tap(instance => _instance = instance).
                         Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i)).
                         Tap(pc => _pressureContour = pc);
-            if (result.IsFailure)            
+            if (result.IsFailure)
                 TaskDialog.Show("Test", $"Error:{result.Error}");
         }
 
@@ -161,7 +161,7 @@ namespace Void_Profile_Editor.ViewModels
                     tr.Start();
                     foreach (var line in contour)
                     {
-                        if (line.Key==ContourSideName.NoIntersection)
+                        if (line.Key == ContourSideName.TopLeft || line.Key==ContourSideName.TopRight)
                             continue;
                         _drawLineService.DrawLine(line.Value, tr);
                     }
@@ -199,9 +199,9 @@ namespace Void_Profile_Editor.ViewModels
                     return CSharpFunctionalExtensions.Result.Success();
                 })
                 // test method
-                .Bind(()=>
+                .Bind(() =>
                 {
-                    using(Transaction tr=new Transaction(_document,"Draw Cutting Line"))
+                    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
                     {
                         tr.Start();
                         if (_cuttingLines == null)
@@ -256,7 +256,7 @@ namespace Void_Profile_Editor.ViewModels
                 // вычисляем параметры
                 .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
                 // сохраняем параметры
-                .Bind(()=>_pressureCounturInformationService.UpdateParameters(_document,_instance,_pressureContour.ContourParameters));
+                .Bind(() => _pressureCounturInformationService.UpdateParameters(_document, _instance, _pressureContour.ContourParameters));
 
         }
         private CSharpFunctionalExtensions.Result FindIntersection()
@@ -266,12 +266,9 @@ namespace Void_Profile_Editor.ViewModels
             if (_cuttingLines == null)
                 return CSharpFunctionalExtensions.Result.Failure("Секущие линии не созданы");
             _intersectionPoints = new IntersectionPoint[2];
-            for (var i = 0; i < 2; i++)
-            {
-                var result = _geometryService.LineWithContourIntersection(_cuttingLines[i], _contourHalfH0);
-                if (result.IsSuccess)
-                    _intersectionPoints[i] = result.Value;
-            }
+            var result = _geometryService.LineWithContourIntersection(_cuttingLines, _contourHalfH0);
+            if (result.IsSuccess)
+                _intersectionPoints = result.Value;
             return CSharpFunctionalExtensions.Result.Success();
         }
         #endregion
