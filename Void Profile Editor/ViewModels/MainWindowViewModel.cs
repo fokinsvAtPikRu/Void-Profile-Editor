@@ -41,6 +41,8 @@ namespace Void_Profile_Editor.ViewModels
         private Line[] _cuttingLines;
         private IntersectionPoint[] _intersectionPoints;
 
+        // Observable Properties
+        
 
 
 
