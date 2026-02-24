@@ -57,7 +57,7 @@ namespace Void_Profile_Editor.Services
             var parameters = pressureContour.ContourParameters;            
 
             parameters.IntParameters["Вкл редактирование контура"] = 1;
-            bool firstPointIsFounded = false;
+            bool firstPointIsFounded = false;            
             foreach (var edge in contourHalfH0)
             {
                 // флаг первая точка пересечения найдена - ложь и первая точка пересечения не на текущей грани - пропускаем шаг
@@ -81,13 +81,15 @@ namespace Void_Profile_Editor.Services
                         if (String.IsNullOrEmpty(parameterNameHoleOffset) || String.IsNullOrEmpty(parameterNameHoleWidth))
                             continue;
                         SetHoleOnEdge(parameters, parameterNameHoleWidth, parameterNameHoleOffset, distance, offset);
-                        continue;
+                        break;
                     }
                     // если вторая точка не на этой грани устанавливаем смещение последней точки грани
                     else
                     {
                         var distance = CalculateDistance(points[0].Point, edge.Value.GetEndPoint(1));
                         string parameterNameOffset = GetParameterNameForOffset(edge.Key, false);
+                        if (String.IsNullOrEmpty(parameterNameOffset))
+                            continue;
                         SetOffsetFromEdge(parameters, parameterNameOffset, distance);
                         continue;
                     }
@@ -96,6 +98,8 @@ namespace Void_Profile_Editor.Services
                 if (firstPointIsFounded && edge.Key != points[1].SideName)
                 {
                     string parameterNameSwitchOffEdge= GetParameterNameSwitchOffEdge(edge.Key);
+                    if (String.IsNullOrEmpty(parameterNameSwitchOffEdge))
+                        continue;
                     parameters.IntParameters[parameterNameSwitchOffEdge] = 0;
                     continue;
                 }
@@ -104,8 +108,10 @@ namespace Void_Profile_Editor.Services
                 {
                     var distance = CalculateDistance(points[1].Point, edge.Value.GetEndPoint(0));
                     string parameterNameOffset = GetParameterNameForOffset(edge.Key, true);
+                    if (String.IsNullOrEmpty(parameterNameOffset))
+                        continue;
                     SetOffsetFromEdge(parameters, parameterNameOffset, distance);
-                    continue;
+                    break;
                 }
             }            
             return CSharpFunctionalExtensions.Result.Success();

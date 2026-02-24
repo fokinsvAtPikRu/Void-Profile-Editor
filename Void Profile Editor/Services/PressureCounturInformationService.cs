@@ -68,7 +68,7 @@ namespace Void_Profile_Editor.Services
                 foreach (var key in parameters.IntParameters.Keys)
                 {
                     parameter = instance.LookupParameter(key);
-                    if (!parameter.IsReadOnly)
+                    if (!parameter.IsReadOnly && !String.IsNullOrEmpty(key))
                         parameter.Set(parameters.IntParameters[key]);
                 }
                 trans.Commit();

@@ -69,8 +69,8 @@ namespace Void_Profile_Editor.ViewModels
             _geometryService = geometryService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
-            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour);
-            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines);
+            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanExecuteCreateContourCommand);
+            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines, CanExecuteCreateCuttingLines);
 
         }
         #endregion
@@ -103,6 +103,7 @@ namespace Void_Profile_Editor.ViewModels
                         Tap(pc => _pressureContour = pc);
             if (result.IsFailure)
                 TaskDialog.Show("Test", $"Error:{result.Error}");
+            
         }
 
         #endregion
@@ -128,7 +129,7 @@ namespace Void_Profile_Editor.ViewModels
                         Bind(c => DrawContour(c)).
                         Bind(() => CreateHalfH0Contour());
             if (result.IsFailure)
-                TaskDialog.Show("Test", $"Error:{result.Error}");
+                TaskDialog.Show("Test", $"Error:{result.Error}");            
         }
         private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour()
         {
@@ -175,11 +176,16 @@ namespace Void_Profile_Editor.ViewModels
             }
         }
         #endregion
+        #region CanExecute for CreateContourCommand
+        private bool CanExecuteCreateContourCommand() => _instance!=null;
+        #endregion
         #region Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLines()
         {
             await _revitTask.Run(app => CreateCuttingLines());
         }
+        private bool CanExecuteCreateCuttingLines() =>
+            _instance!=null && _pressureContour!=null && _contourHalfH0!=null;
         private void CreateCuttingLines()
         {
             try
