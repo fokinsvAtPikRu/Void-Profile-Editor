@@ -27,7 +27,8 @@
             Margin="10" Padding="10"
             Content="Построить контур" 
             FontSize="20"
-            Command="{Binding CreateContourCommand}"/>
+            Command="{Binding CreateContourCommand}"
+            IsEnabled="{Binding CanCreateContourCommandExecute}"/>
         <Button
              Grid.Row="2"
              Margin="10" Padding="10"

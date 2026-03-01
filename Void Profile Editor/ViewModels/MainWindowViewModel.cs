@@ -33,8 +33,8 @@ namespace Void_Profile_Editor.ViewModels
 
 
         // Fields
-        private Document _document;
-        private FamilyInstance _instance;
+        private Document _document;        
+        private FamilyInstance _instance;        
         private PressureContour _pressureContour;
         private Contour _contour6H0;
         private Contour _contourHalfH0;
@@ -42,7 +42,19 @@ namespace Void_Profile_Editor.ViewModels
         private IntersectionPoint[] _intersectionPoints;
 
         // Observable Properties
-        
+        public FamilyInstance Instance
+        {
+            get => _instance;
+            set
+            {
+                if (SetProperty(ref _instance, value))
+                {
+                    _createContourCommand.NotifyCanExecuteChanged();
+                     OnPropertyChanged(nameof(CanCreateContourCommandExecute));                    
+                }
+            }
+        }
+
 
 
 
@@ -71,8 +83,8 @@ namespace Void_Profile_Editor.ViewModels
             _geometryService = geometryService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
-            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanExecuteCreateContourCommand);
-            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines, CanExecuteCreateCuttingLines);
+            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour/*, CanCreateContourCommandExecute*/);
+            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines/*, CanExecuteCreateCuttingLines*/);
 
         }
         #endregion
@@ -179,7 +191,7 @@ namespace Void_Profile_Editor.ViewModels
         }
         #endregion
         #region CanExecute for CreateContourCommand
-        private bool CanExecuteCreateContourCommand() => _instance!=null;
+        private bool CanCreateContourCommandExecute() => Instance!=null;
         #endregion
         #region Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLines()

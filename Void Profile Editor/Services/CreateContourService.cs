@@ -45,6 +45,10 @@ namespace Void_Profile_Editor.Services
                     locationPoint.Y + thickness + 0.5 * h0,
                     0);
                 XYZ topMiddle = (topRight + topLeft) / 2;
+                XYZ center = new XYZ
+                    (locationPoint.X,
+                    locationPoint.Y + (thickness + 0.5 * h0) * 0.5,
+                    0);                    
 
                 rotationAngle = isMirrored ? (rotationAngle - Math.PI) % (2 * Math.PI) : rotationAngle % (2 * Math.PI);
                 // поворачиваем контур
@@ -53,25 +57,37 @@ namespace Void_Profile_Editor.Services
                 topRight = _geometryService.RotatePointAroundAxis(topRight, locationPoint, XYZ.BasisZ, rotationAngle);
                 topLeft = _geometryService.RotatePointAroundAxis(topLeft, locationPoint, XYZ.BasisZ, rotationAngle);
                 topMiddle = _geometryService.RotatePointAroundAxis(topMiddle, locationPoint, XYZ.BasisZ, rotationAngle);
+                center=_geometryService.RotatePointAroundAxis(center, locationPoint, XYZ.BasisZ, rotationAngle);
 
-                IntersectionResultArray results = null;
-                SetComparisonResult comparison = Line.CreateBound(bottomLeft, topRight).Intersect(Line.CreateBound(topLeft, bottomRight), out results);
-                if (comparison == SetComparisonResult.Overlap && results != null && results.Size > 0)
+
+                if (!isMirrored)
                 {
                     Contour contour = new Contour()
                     {
                         TopLeft = Line.CreateBound(topMiddle, topLeft),
                         Left = Line.CreateBound(topLeft, bottomLeft),
-                        Bottom = Line.CreateBound(bottomLeft, bottomRight),                        
+                        Bottom = Line.CreateBound(bottomLeft, bottomRight),
                         Right = Line.CreateBound(bottomRight, topRight),
                         TopRight = Line.CreateBound(topRight, topMiddle),
-                        Center = results.get_Item(0).XYZPoint
+                        Center = center
 
                     };
                     return contour;
                 }
                 else
-                    return CSharpFunctionalExtensions.Result.Failure<Contour>("Не удалось создать контур. Не найден центр контура");
+                {
+                    Contour contour = new Contour()
+                    {
+                        TopLeft = Line.CreateBound(topMiddle, topRight),
+                        Left = Line.CreateBound(topRight, bottomRight),
+                        Bottom = Line.CreateBound(bottomRight, bottomLeft),
+                        Right = Line.CreateBound(bottomLeft, topLeft),
+                        TopRight = Line.CreateBound(topLeft, topMiddle),
+                        Center = center
+
+                    };
+                    return contour;
+                }
             }
             catch (Exception ex)
             {
