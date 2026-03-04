@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Messaging.Messages;
 using CSharpFunctionalExtensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Abstraction;
 using Void_Profile_Editor.Model;
@@ -30,16 +31,18 @@ namespace Void_Profile_Editor.ViewModels
         private readonly AsyncRelayCommand _selectFamilyInstanceCommand;
         private readonly AsyncRelayCommand _createContourCommand;
         private readonly AsyncRelayCommand _createCutingLinesCommand;
+        private readonly AsyncRelayCommand _deleteContourCommand;
 
 
         // Fields
-        private Document _document;        
-        private FamilyInstance _instance;        
+        private Document _document;
+        private FamilyInstance _instance;
         private PressureContour _pressureContour;
         private Contour _contour6H0;
         private Contour _contourHalfH0;
         private Line[] _cuttingLines;
         private IntersectionPoint[] _intersectionPoints;
+        private List<ElementId> _createdLineIds = new List<ElementId>();
 
         // Observable Properties
         public FamilyInstance Instance
@@ -50,12 +53,31 @@ namespace Void_Profile_Editor.ViewModels
                 if (SetProperty(ref _instance, value))
                 {
                     _createContourCommand.NotifyCanExecuteChanged();
-                     OnPropertyChanged(nameof(CanCreateContourCommandExecute));                    
                 }
             }
         }
-
-
+        public PressureContour PressureContour
+        {
+            get => _pressureContour;
+            set
+            {
+                if (SetProperty(ref _pressureContour, value))
+                {
+                    _createCutingLinesCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+        public Contour ContourHalfH0
+        {
+            get => _contourHalfH0;
+            set
+            {
+                if (SetProperty(ref _contourHalfH0, value))
+                {
+                    _createCutingLinesCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
 
 
 
@@ -83,8 +105,9 @@ namespace Void_Profile_Editor.ViewModels
             _geometryService = geometryService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
-            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour/*, CanCreateContourCommandExecute*/);
-            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines/*, CanExecuteCreateCuttingLines*/);
+            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanCreateContourCommandExecute);
+            _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLines, CanCreateCuttingLinesExecute);
+            _deleteContourCommand = new AsyncRelayCommand(AsyncDeleteContour, CanDeleteContourExecute);
 
         }
         #endregion
@@ -112,12 +135,14 @@ namespace Void_Profile_Editor.ViewModels
         private void SelectFamilyInstance()
         {
             var result = _selectionService.PickObject().
-                        Tap(instance => _instance = instance).
+                        Tap(instance => Instance = instance).
+                        Tap(instance => PressureContour = null).
+                        Tap(instance => ContourHalfH0 = null).
                         Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i)).
-                        Tap(pc => _pressureContour = pc);
+                        Tap(pc => PressureContour = pc);
             if (result.IsFailure)
                 TaskDialog.Show("Test", $"Error:{result.Error}");
-            
+
         }
 
         #endregion
@@ -129,12 +154,12 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateContour()
         {
-            if (_instance == null)
+            if (Instance == null)
             {
                 TaskDialog.Show("Ошибка", "Семейство не выбрано");
                 return;
             }
-            if (_pressureContour == null)
+            if (PressureContour == null)
             {
                 TaskDialog.Show("Ошибка", "Контур не создан");
                 return;
@@ -143,7 +168,7 @@ namespace Void_Profile_Editor.ViewModels
                         Bind(c => DrawContour(c)).
                         Bind(() => CreateHalfH0Contour());
             if (result.IsFailure)
-                TaskDialog.Show("Test", $"Error:{result.Error}");            
+                TaskDialog.Show("Test", $"Error:{result.Error}");
         }
         private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour()
         {
@@ -158,7 +183,7 @@ namespace Void_Profile_Editor.ViewModels
         }
         private CSharpFunctionalExtensions.Result<Contour> CreateHalfH0Contour()
         {
-            _contourHalfH0 = _createContourService.Create(
+            ContourHalfH0 = _createContourService.Create(
                _pressureContour.InsertPoint,
                _pressureContour.Rotation,
                _pressureContour.ContourParameters.DoubleParameters["h0"],
@@ -176,7 +201,7 @@ namespace Void_Profile_Editor.ViewModels
                     tr.Start();
                     foreach (var line in contour)
                     {
-                        if (line.Key == ContourSideName.TopLeft || line.Key==ContourSideName.TopRight)
+                        if (line.Key == ContourSideName.TopLeft || line.Key == ContourSideName.TopRight)
                             continue;
                         _drawLineService.DrawLine(line.Value, tr);
                     }
@@ -191,15 +216,15 @@ namespace Void_Profile_Editor.ViewModels
         }
         #endregion
         #region CanExecute for CreateContourCommand
-        private bool CanCreateContourCommandExecute() => Instance!=null;
+        private bool CanCreateContourCommandExecute() => Instance != null;
         #endregion
         #region Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLines()
         {
             await _revitTask.Run(app => CreateCuttingLines());
         }
-        private bool CanExecuteCreateCuttingLines() =>
-            _instance!=null && _pressureContour!=null && _contourHalfH0!=null;
+        private bool CanCreateCuttingLinesExecute() =>
+            Instance != null && PressureContour != null && ContourHalfH0 != null;
         private void CreateCuttingLines()
         {
             try
@@ -258,9 +283,17 @@ namespace Void_Profile_Editor.ViewModels
                             tr.Commit();
                         }
                         return CSharpFunctionalExtensions.Result.Success();
-                    })
+                    })                    
                     // ищем точки пересечения секущих линий с контуром 0.5H0
                     .Bind(() => FindIntersection())
+                    // упорядочиваем _intersectionPoints
+                    .Tap(() =>
+                    {
+                        var orderedPoints = _intersectionPoints
+                            .OrderBy(p => p.SideName)
+                            .ToArray();
+                        _intersectionPoints = orderedPoints;
+                    })
                     //// test method
                     //.Bind(() =>
                     //{

@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using Autodesk.Revit.DB;
 using Void_Profile_Editor.Abstraction;
+using System.Collections.Generic;
 
 namespace Void_Profile_Editor.Services
 {
@@ -13,7 +14,11 @@ namespace Void_Profile_Editor.Services
         {
             _document = document;
         }
-        public CSharpFunctionalExtensions.Result DrawLine(Line line, Transaction transaction = null, View view = null, string lineStyleName = "Тонкие линии")
+        public CSharpFunctionalExtensions.Result DrawLine(Line line, 
+            Transaction transaction = null, 
+            View view = null, 
+            string lineStyleName = "Тонкие линии",
+            List<ElementId> createdElementId = null)
         {
             
             if (transaction == null)

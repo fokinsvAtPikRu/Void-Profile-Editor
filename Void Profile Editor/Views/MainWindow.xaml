@@ -27,15 +27,20 @@
             Margin="10" Padding="10"
             Content="Построить контур" 
             FontSize="20"
-            Command="{Binding CreateContourCommand}"
-            IsEnabled="{Binding CanCreateContourCommandExecute}"/>
+            Command="{Binding CreateContourCommand}"/>
         <Button
              Grid.Row="2"
              Margin="10" Padding="10"
              Content="Построить секущие линии" 
              FontSize="20"
              Command="{Binding CreateCutingLinesCommand}"/>
-        
+        <Button
+             Grid.Row="3"
+             Margin="10" Padding="10"
+             Content="Удалить контур" 
+             FontSize="20"
+             Command="{Binding CreateCutingLinesCommand}"/> 
+
 
 
     </Grid>
