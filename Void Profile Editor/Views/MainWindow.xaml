@@ -39,7 +39,7 @@
              Margin="10" Padding="10"
              Content="Удалить контур" 
              FontSize="20"
-             Command="{Binding CreateCutingLinesCommand}"/> 
+             Command="{Binding DeleteContourCommand}"/> 
 
 
 

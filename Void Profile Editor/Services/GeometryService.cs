@@ -86,7 +86,10 @@ namespace Void_Profile_Editor.Services
                     // если вторая точка не на этой грани устанавливаем смещение последней точки грани
                     else
                     {
-                        var distance = CalculateDistance(points[0].Point, edge.Value.GetEndPoint(1));
+                        var endEdgePoint = points[0].SideName == ContourSideName.Right ?
+                            edge.Value.GetEndPoint(0) :
+                            edge.Value.GetEndPoint(1);
+                        var distance = CalculateDistance(points[0].Point, endEdgePoint);
                         string parameterNameOffset = GetParameterNameForOffset(edge.Key, false);
                         if (String.IsNullOrEmpty(parameterNameOffset))
                             continue;
@@ -106,7 +109,10 @@ namespace Void_Profile_Editor.Services
                 // первая точка пересечения уже найдена, вторая точка на текущей стороне - задаем смещение от начала
                 if (firstPointIsFounded && edge.Key == points[1].SideName)
                 {
-                    var distance = CalculateDistance(points[1].Point, edge.Value.GetEndPoint(0));
+                    var startEdgePoint = points[0].SideName == ContourSideName.Right ?
+                            edge.Value.GetEndPoint(1) :
+                            edge.Value.GetEndPoint(0);
+                    var distance = CalculateDistance(points[1].Point, startEdgePoint);
                     string parameterNameOffset = GetParameterNameForOffset(edge.Key, true);
                     if (String.IsNullOrEmpty(parameterNameOffset))
                         continue;
@@ -213,6 +219,10 @@ namespace Void_Profile_Editor.Services
             }
             return result;
         }
+
+        private int ChangeIndexForRightEdge(int index) =>
+            index == 0 ? 1 : 0;
+
     }
 }
 

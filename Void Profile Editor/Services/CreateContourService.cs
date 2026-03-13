@@ -67,7 +67,7 @@ namespace Void_Profile_Editor.Services
                         TopLeft = Line.CreateBound(topMiddle, topLeft),
                         Left = Line.CreateBound(topLeft, bottomLeft),
                         Bottom = Line.CreateBound(bottomLeft, bottomRight),
-                        Right = Line.CreateBound(bottomRight, topRight),
+                        Right = Line.CreateBound(topRight,bottomRight),
                         TopRight = Line.CreateBound(topRight, topMiddle),
                         Center = center
 
@@ -81,7 +81,7 @@ namespace Void_Profile_Editor.Services
                         TopLeft = Line.CreateBound(topMiddle, topRight),
                         Left = Line.CreateBound(topRight, bottomRight),
                         Bottom = Line.CreateBound(bottomRight, bottomLeft),
-                        Right = Line.CreateBound(bottomLeft, topLeft),
+                        Right = Line.CreateBound(topLeft,bottomLeft),
                         TopRight = Line.CreateBound(topLeft, topMiddle),
                         Center = center
 

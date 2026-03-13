@@ -33,8 +33,7 @@ namespace Void_Profile_Editor.Model
                     return TopRight;
                 default:
                     return null;
-            }
-            ;
+            };
         }
 
         public IEnumerator<KeyValuePair<ContourSideName, Line>> GetEnumerator()
