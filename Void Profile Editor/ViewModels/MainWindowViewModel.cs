@@ -146,12 +146,12 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void SelectFamilyInstance()
         {
-            var result = _selectionService.PickObject().
-                        Tap(instance => Instance = instance).
-                        Tap(instance => PressureContour = null).
-                        Tap(instance => ContourHalfH0 = null).
-                        Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i)).
-                        Tap(pc => PressureContour = pc);
+            var result = _selectionService.PickObject()
+                        .Tap(instance => Instance = instance)
+                        .Tap(instance => PressureContour = null)
+                        .Tap(instance => ContourHalfH0 = null)
+                        .Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i))
+                        .Tap(pc => PressureContour = pc);
             if (result.IsFailure)
                 TaskDialog.Show("Test", $"Error:{result.Error}");
 
