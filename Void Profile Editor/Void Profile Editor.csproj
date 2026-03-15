@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net48</TargetFramework>
 		<UseWPF>true</UseWPF>
+		<LangVersion>10.0</LangVersion>
 		<RootNamespace>Void_Profile_Editor</RootNamespace>
 	</PropertyGroup>
 
