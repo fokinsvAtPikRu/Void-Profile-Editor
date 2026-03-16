@@ -109,7 +109,7 @@ namespace Void_Profile_Editor.Services
                 // первая точка пересечения уже найдена, вторая точка на текущей стороне - задаем смещение от начала
                 if (firstPointIsFounded && edge.Key == points[1].SideName)
                 {
-                    var startEdgePoint = points[0].SideName == ContourSideName.Right ?
+                    var startEdgePoint = points[1].SideName == ContourSideName.Right ?
                             edge.Value.GetEndPoint(1) :
                             edge.Value.GetEndPoint(0);
                     var distance = CalculateDistance(points[1].Point, startEdgePoint);
