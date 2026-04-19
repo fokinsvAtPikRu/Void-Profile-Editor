@@ -1,6 +1,8 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
 using Void_Profile_Editor.Abstraction;
 using Void_Profile_Editor.Model;
 
@@ -8,10 +10,10 @@ namespace Void_Profile_Editor.Services
 {
     public class PressureCounturInformationService : IPressureCounturInformationService
     {
-        private Document _document;
+        private Autodesk.Revit.DB.Document _document;
         private IGeometryService _geometryService;
         public PressureCounturInformationService(
-            Document document,
+            Autodesk.Revit.DB.Document document,
             IGeometryService geometryService)
         {
             _document = document;
@@ -34,11 +36,21 @@ namespace Void_Profile_Editor.Services
                 PressureContourParameters parameters = new PressureContourParameters();
                 foreach (var key in contour.ContourParameters.DoubleParameters.Keys)
                 {
-                    parameters.DoubleParameters[key] = instance.LookupParameter(key).AsDouble();
+                    var parametr = instance.LookupParameter(key);
+                    if (parametr == null)
+                    {
+                        throw new Exception($"Параметр {key} не найден");
+                    }
+                    parameters.DoubleParameters[key] = parametr.AsDouble();
                 }
                 foreach (var key in contour.ContourParameters.IntParameters.Keys)
                 {
-                    parameters.IntParameters[key] = instance.LookupParameter(key).AsInteger();
+                    var parametr = instance.LookupParameter(key);
+                    if (parametr == null)
+                    {
+                        throw new Exception($"Параметр {key} не найден");
+                    }
+                    parameters.IntParameters[key] = parametr.AsInteger();
                 }
                 contour.ContourParameters = parameters;
                 return contour;
@@ -49,27 +61,53 @@ namespace Void_Profile_Editor.Services
             }
         }
 
-        public CSharpFunctionalExtensions.Result UpdateParameters(Document doc, FamilyInstance instance, PressureContourParameters parameters)
+        public CSharpFunctionalExtensions.Result UpdateParameters(Autodesk.Revit.DB.Document doc, 
+            FamilyInstance instance, 
+            PressureContourParameters parameters)
         {
             if (doc == null)
                 return CSharpFunctionalExtensions.Result.Failure("document == null");
             if (parameters == null)
                 return CSharpFunctionalExtensions.Result.Failure("parameters == null");
+
+            foreach (var key in parameters.DoubleParameters.Keys)
+            {
+                Autodesk.Revit.DB.Parameter parameter = instance.LookupParameter(key);
+                if (parameter == null)
+                {
+                    return CSharpFunctionalExtensions.Result.Failure($"Не найден параметр {key} в экземпляре семейства");
+                }
+                if (parameter.IsReadOnly)
+                {
+                    return CSharpFunctionalExtensions.Result.Failure($"Параметр {key} доступен только для чтения");
+                }
+            }
+            foreach (var key in parameters.IntParameters.Keys)
+            {
+                Autodesk.Revit.DB.Parameter parameter = instance.LookupParameter(key);
+                if (parameter == null)
+                {
+                    return CSharpFunctionalExtensions.Result.Failure($"Не найден параметр {key} в экземпляре семейства");
+                }
+                if (parameter.IsReadOnly)
+                {
+                    return CSharpFunctionalExtensions.Result.Failure($"Параметр {key} доступен только для чтения");
+                }
+            }
+
             using (Transaction trans = new Transaction(doc, "Изменение параметров контура продавливания"))
             {
                 trans.Start();
-                Parameter parameter;
+                Autodesk.Revit.DB.Parameter parameter;
                 foreach (var key in parameters.DoubleParameters.Keys)
                 {
                     parameter = instance.LookupParameter(key);
-                    if (!parameter.IsReadOnly)
-                        parameter.Set(parameters.DoubleParameters[key]);
+                    parameter.Set(parameters.DoubleParameters[key]);
                 }
                 foreach (var key in parameters.IntParameters.Keys)
                 {
                     parameter = instance.LookupParameter(key);
-                    if (!parameter.IsReadOnly && !String.IsNullOrEmpty(key))
-                        parameter.Set(parameters.IntParameters[key]);
+                    parameter.Set(parameters.IntParameters[key]);
                 }
                 trans.Commit();
             }
@@ -88,5 +126,7 @@ namespace Void_Profile_Editor.Services
                 XYZ.BasisZ,
                 contour.Rotation);
         }
+
+        
     }
 }

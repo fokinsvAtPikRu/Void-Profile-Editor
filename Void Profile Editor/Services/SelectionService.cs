@@ -24,7 +24,7 @@ namespace Void_Profile_Editor.Services
             }
             catch (Autodesk.Revit.Exceptions.OperationCanceledException)
             {
-                return null;
+                return CSharpFunctionalExtensions.Result.Failure<FamilyInstance>("Выбор объекта отменен пользователем");
             }
         }
 
@@ -38,7 +38,7 @@ namespace Void_Profile_Editor.Services
             }
             catch(Autodesk.Revit.Exceptions.OperationCanceledException)
             {
-                return null;
+                return CSharpFunctionalExtensions.Result.Failure<XYZ>("Выбор точки отменен пользователем");
             }
         }
     }
