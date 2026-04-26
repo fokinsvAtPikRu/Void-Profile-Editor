@@ -1,7 +1,7 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using Void_Profile_Editor.Abstraction;
+using Void_Profile_Editor.Abstraction.Services;
 using Void_Profile_Editor.Model;
 
 namespace Void_Profile_Editor.Services
@@ -18,7 +18,7 @@ namespace Void_Profile_Editor.Services
         {
             try
             {
-                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new FamilyInstanceSelectionFilter(), "Выберите элемент");
+                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new PushingEndWallSelectionFilter(), "Выберите элемент");
                 FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
                 return element;
             }

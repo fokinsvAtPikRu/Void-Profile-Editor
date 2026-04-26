@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Model;
 
-namespace Void_Profile_Editor.Abstraction
+namespace Void_Profile_Editor.Abstraction.Services
 {
     public interface IPressureCounturInformationService
     {

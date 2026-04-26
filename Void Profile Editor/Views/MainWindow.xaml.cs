@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Autodesk.Revit.UI;
+using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Threading;
 using System.Windows;
 using Void_Profile_Editor.ViewModels;
 
@@ -11,6 +13,8 @@ namespace Void_Profile_Editor.Views
     public partial class MainWindow : Window
     {
         private static MainWindow _instance;
+        private static Mutex _mutex;
+        private const string MutexName = @"Global\Void_Profile_Editor_Mutex";
         public MainWindow(MainWindowViewModel viewModel)
         {
             DataContext = viewModel;
@@ -19,24 +23,54 @@ namespace Void_Profile_Editor.Views
 
         public static void ShowOrActive(IServiceProvider serviceProvider)
         {
-            if (_instance == null)
+            if (_instance != null)
             {
-                // если окно не создано - создаем новое окно
-                var viewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
-                _instance = new MainWindow(viewModel);
-                // при закрытии окна очищаем поле _instance
-                _instance.Closed += (s, e) =>
+                try
+                {
+                    _instance.Dispatcher.Invoke(() =>
+                    {
+                        {
+                            if (_instance.IsLoaded)
+                            {
+                                _instance.Activate();                                
+                            }
+                        }
+                    });
+                    return;
+                }
+                catch
                 {
                     _instance = null;
-                };
-                // показываем окно
-                _instance.Show();
+                }
+                if (_instance != null)
+                    return;
             }
-            else
+
+            bool createdNew;
+            _mutex=new Mutex(true, MutexName, out createdNew);
+            if (!createdNew) 
             {
-                // если окно уже существует - показываем его
-                _instance.Show();
+                TaskDialog.Show("Внимание", "Плагин уже запущен");
+                _mutex.Dispose();
+                _mutex = null;
+                return;
             }
+
+            var viewModel=serviceProvider.GetService<MainWindowViewModel>();
+            _instance=new MainWindow(viewModel);
+
+            _instance.Closed += (s, e) =>
+            {
+                _instance = null;
+                if (_mutex != null)
+                {
+                    _mutex.ReleaseMutex();
+                    _mutex.Dispose();
+                    _mutex = null;
+                }
+            };
+
+            _instance.Show();
         }
     }
 }

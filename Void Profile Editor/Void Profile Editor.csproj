@@ -24,4 +24,9 @@
 		</Reference>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Abstraction\UseCases\" />
+	  <Folder Include="UseCases\" />
+	</ItemGroup>
+
 </Project>

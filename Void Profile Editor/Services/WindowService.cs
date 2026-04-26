@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Void_Profile_Editor.Abstraction;
+using Void_Profile_Editor.Abstraction.Services;
 
 namespace Void_Profile_Editor.Services
 {

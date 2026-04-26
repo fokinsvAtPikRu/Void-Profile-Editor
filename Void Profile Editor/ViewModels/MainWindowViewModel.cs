@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Void_Profile_Editor.Abstraction;
+using Void_Profile_Editor.Abstraction.Services;
 using Void_Profile_Editor.Model;
 
 namespace Void_Profile_Editor.ViewModels
