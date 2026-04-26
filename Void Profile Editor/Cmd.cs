@@ -13,8 +13,7 @@ namespace Void_Profile_Editor
     {
         public PluginResult ExecuteCommand(IServiceProvider provider)
         {
-            var mainWindow = provider.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            MainWindow.ShowOrActive(provider);
             return PluginResult.Succeeded;
         }
     }
