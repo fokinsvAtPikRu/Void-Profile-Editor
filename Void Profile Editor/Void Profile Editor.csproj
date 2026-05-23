@@ -27,7 +27,6 @@
 	<ItemGroup>
 	  <Folder Include="Abstraction\Services\RevitServices\" />
 	  <Folder Include="Abstraction\UseCases\" />
-	  <Folder Include="UseCases\" />
 	</ItemGroup>
 
 </Project>
