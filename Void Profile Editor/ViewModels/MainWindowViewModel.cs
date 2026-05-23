@@ -308,21 +308,7 @@ namespace Void_Profile_Editor.ViewModels
                             .ThenBy(p=>p.Point.DistanceTo(_contourHalfH0.GetLine(p.SideName).GetEndPoint(0)))
                             .ToArray();
                         _intersectionPoints = orderedPoints;
-                    })
-                    //// test method
-                    //.Bind(() =>
-                    //{
-                    //    using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
-                    //    {
-                    //        tr.Start();
-                    //        if (_cuttingLines == null)
-                    //            tr.RollBack();
-                    //        else                            
-                    //            _drawLineService.DrawLine(Line.CreateBound(_intersectionPoints[0].Point, _intersectionPoints[1].Point), tr);
-                    //        tr.Commit();
-                    //    }
-                    //    return CSharpFunctionalExtensions.Result.Success();
-                    //})
+                    })                    
                     // вычисляем параметры
                     .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
                     // сохраняем параметры
