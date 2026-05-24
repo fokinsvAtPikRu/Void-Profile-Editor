@@ -3,8 +3,9 @@ using Autodesk.Revit.UI;
 using CSharpFunctionalExtensions;
 using System;
 using System.Linq;
-using Void_Profile_Editor.Abstraction.Services;
-using Void_Profile_Editor.Model;
+using Void_Profile_Editor.Domain.Abstraction.Services;
+using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Services;
 
 namespace Void_Profile_Editor.UseCases

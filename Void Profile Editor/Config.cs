@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Void_Profile_Editor.Abstraction.Services;
-using Void_Profile_Editor.Services;
+using Void_Profile_Editor.Domain.Abstraction.Services;
+using Void_Profile_Editor.Domain.Services;
+using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.Infrastructure.Services;
 using Void_Profile_Editor.ViewModels;
 using Void_Profile_Editor.Views;
 
