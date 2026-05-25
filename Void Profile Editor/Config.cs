@@ -7,9 +7,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Domain.Abstraction.Services;
+using Void_Profile_Editor.Domain.Models.Geometry;
 using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Services;
+using Void_Profile_Editor.UseCases;
 using Void_Profile_Editor.ViewModels;
 using Void_Profile_Editor.Views;
 
@@ -26,6 +28,7 @@ namespace Void_Profile_Editor
             services.AddSingleton<IGeometryService, GeometryService>();
             services.AddSingleton<IPressureCounturInformationService, PressureCounturInformationService>();
             services.AddSingleton<ISelectionService, SelectionService>();
+            services.AddSingleton<ISelectInstanceUseCase, SelectInstanceUseCase>();
             // Window Service
             services.AddSingleton<IWindowService, WindowService>();
             // View Model

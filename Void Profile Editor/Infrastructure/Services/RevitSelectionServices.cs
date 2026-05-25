@@ -1,14 +1,12 @@
-﻿using Autodesk.Revit.DB;
+﻿using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using System;
-using System.Threading.Tasks;
-using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.Infrastructure.Adapters;
 
 namespace Void_Profile_Editor.Infrastructure.Services
 {
-    internal class RevitSelectionServices : IRevitSelectionServices
+    public class RevitSelectionServices : IRevitSelectionServices
     {
         private readonly RevitTask _revitTask;
         private readonly ISelectionService _selectionService;
@@ -19,19 +17,21 @@ namespace Void_Profile_Editor.Infrastructure.Services
             )
         {
             _revitTask = revitTask;
-
+            _selectionService = selectionService;
         }
 
 
 
-        public Task<Result<FamilyInstance>> PickFamilyInstanceAsync(string prompt = "Выберите то")
+        public async Task<Result<PressureContour>> PickFamilyInstanceAsync(string prompt = "Выберите объект")
         {
-            throw new NotImplementedException();
+            var result = await _revitTask.Run(app => _selectionService.PickObject());
+            return result.Value.ToDomain();
         }
 
-        public async Task<CSharpFunctionalExtensions.Result<Point3DDomain>> PickPointAsync(string prompt = "Выберите точку")
+        public async Task<Result<Point3DDomain>> PickPointAsync(string prompt = "Выберите точку")
         {
-            return await _revitTask.Run<Point3DDomain>(app => _selectionService.PickPoint());
+            var result= await _revitTask.Run(app => _selectionService.PickPoint());
+            return result;
         }
     }
 }

@@ -10,6 +10,6 @@ namespace Void_Profile_Editor.Infrastructure.Abstraction
     public interface IRevitSelectionServices
     {        
             Task<Result<Point3DDomain>> PickPointAsync(string prompt);
-            Task<Result<FamilyInstance>> PickFamilyInstanceAsync(string prompt);        
+            Task<Result<PressureContour>> PickFamilyInstanceAsync(string prompt);        
     }
 }

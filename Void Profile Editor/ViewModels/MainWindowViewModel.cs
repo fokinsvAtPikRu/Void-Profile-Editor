@@ -11,11 +11,15 @@ using System.Threading.Tasks;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.UseCases;
 
 namespace Void_Profile_Editor.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
+        #region UseCases
+        private readonly ISelectInstanceUseCase _selectInstanceUseCase;
+        #region
         #region Fields
         // RevitTask
         private RevitTask _revitTask;
@@ -35,6 +39,8 @@ namespace Void_Profile_Editor.ViewModels
 
 
         // Fields
+        private ResultSelectInstanceUseCase _resultSelectInstanceUseCase;
+
         private Document _document;
         private FamilyInstance _instance;
         private PressureContour _pressureContour;
@@ -87,6 +93,7 @@ namespace Void_Profile_Editor.ViewModels
         #endregion
         #region ctor
         public MainWindowViewModel(
+            ISelectInstanceUseCase selectInstanceUseCase,
             RevitTask revitTask,
             Document document,
             ISelectionService selection,
@@ -95,6 +102,9 @@ namespace Void_Profile_Editor.ViewModels
             IDrawLineService drawLineService,
             IGeometryService geometryService)
         {
+            // UseCases
+            _selectInstanceUseCase = selectInstanceUseCase;
+
             // Fields
             _revitTask = revitTask;
             _document = document;
@@ -136,14 +146,16 @@ namespace Void_Profile_Editor.ViewModels
         }
         public AsyncRelayCommand DeleteContourCommand
         {
-            get=> _deleteContourCommand;
+            get => _deleteContourCommand;
         }
         #endregion
         #region Method Execute for SelectFamilyInstanceCommand
         // Method Execute for SelectFamilyInstanceCommand
         private async Task AsyncSelectSelectFamilyInstance()
         {
-            await _revitTask.Run(app => SelectFamilyInstance());
+            var result = await _selectInstanceUseCase.RunAsync();
+            if (result.IsSuccess)
+                _resultSelectInstanceUseCase=result.Value;
         }
         private void SelectFamilyInstance()
         {
@@ -216,10 +228,10 @@ namespace Void_Profile_Editor.ViewModels
                     {
                         if (line.Key == ContourSideName.TopLeft || line.Key == ContourSideName.TopRight)
                             continue;
-                        _drawLineService.DrawLine(line:line.Value, 
-                            transaction:tr,
-                            createdLineIds:_createdLineIds);
-                    }                      
+                        _drawLineService.DrawLine(line: line.Value,
+                            transaction: tr,
+                            createdLineIds: _createdLineIds);
+                    }
                     tr.Commit();
                 }
                 return CSharpFunctionalExtensions.Result.Success();
@@ -298,7 +310,7 @@ namespace Void_Profile_Editor.ViewModels
                             tr.Commit();
                         }
                         return CSharpFunctionalExtensions.Result.Success();
-                    })                    
+                    })
                     // ищем точки пересечения секущих линий с контуром 0.5H0
                     .Bind(() => FindIntersection())
                     // упорядочиваем _intersectionPoints
@@ -306,10 +318,10 @@ namespace Void_Profile_Editor.ViewModels
                     {
                         var orderedPoints = _intersectionPoints
                             .OrderBy(p => p.SideName)
-                            .ThenBy(p=>p.Point.DistanceTo(_contourHalfH0.GetLine(p.SideName).GetEndPoint(0)))
+                            .ThenBy(p => p.Point.DistanceTo(_contourHalfH0.GetLine(p.SideName).GetEndPoint(0)))
                             .ToArray();
                         _intersectionPoints = orderedPoints;
-                    })                    
+                    })
                     // вычисляем параметры
                     .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
                     // сохраняем параметры

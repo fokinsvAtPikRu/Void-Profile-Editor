@@ -6,7 +6,7 @@ using System.Reflection.Metadata;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 
-namespace Void_Profile_Editor.Domain.Services
+namespace Void_Profile_Editor.Domain.Models.Geometry
 {
     public class PressureCounturInformationService : IPressureCounturInformationService
     {
@@ -114,9 +114,9 @@ namespace Void_Profile_Editor.Domain.Services
             return CSharpFunctionalExtensions.Result.Success();
         }
 
-        public XYZ GetCenterPressureContur(PressureContour contour)
+        public Point3DDomain GetCenterPressureContur(PressureContour contour)
         {
-            XYZ center = new XYZ(
+            XYZ center = new Point3DDomain(
                 contour.InsertPoint.X,
                 contour.InsertPoint.Y + contour.ContourParameters.DoubleParameters["Толщина"] + contour.ContourParameters.DoubleParameters["h0"],
                 0);

@@ -36,8 +36,8 @@ namespace Void_Profile_Editor.Infrastructure.Services
             try
             {
                 Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.PointOnElement, "Выберите точку");
-                XYZ point = reference.GlobalPoint;
-                return point.ToDomain();
+                Point3DDomain point = reference.GlobalPoint.ToDomain();
+                return CSharpFunctionalExtensions.Result.Success(point);
             }
             catch(Autodesk.Revit.Exceptions.OperationCanceledException)
             {
