@@ -11,7 +11,7 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
         // Domain -> Revit
         public static XYZ ToRevit(this Point3DDomain point) =>
             new XYZ(point.X, point.Y, point.Z);
-        public static Line ToRevit(this LineSegmentDomain line) =>
+        public static Line ToRevit(this DetailLineDomain line) =>
             Line.CreateBound(line.Start.ToRevit(), line.End.ToRevit());
         public static ElementId ToRevitId(this string domainId) =>
             int.TryParse(domainId, out var id) ? new ElementId(id) : ElementId.InvalidElementId;
@@ -20,8 +20,8 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
         // Revit -> Domain
         public static Point3DDomain ToDomain(this XYZ point) =>
             new Point3DDomain(point.X,point.Y,point.Z);
-        public static LineSegmentDomain ToDomain(this Line line) =>
-            new LineSegmentDomain(line.GetEndPoint(0).ToDomain(), line.GetEndPoint(1).ToDomain());
+        public static DetailLineDomain ToDomain(this Line line) =>
+            new DetailLineDomain(line.GetEndPoint(0).ToDomain(), line.GetEndPoint(1).ToDomain());
         public static string ToDomain(this ElementId revitId) =>
             revitId.IntegerValue.ToString();
         public static PressureContour ToDomain(this FamilyInstance instance)

@@ -5,18 +5,19 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Void_Profile_Editor.Domain.Model.Geometry;
 
-namespace Void_Profile_Editor.Domain.Abstraction.Services
+namespace Void_Profile_Editor.Infrastructure.Abstraction
 {
     public interface IDrawLineService
     {
-        CSharpFunctionalExtensions.Result DrawLine(Line line,
-            Transaction transaction = null,
+        CSharpFunctionalExtensions.Result<List<string>> DrawLine(
+            string trMessage,
+            List<DetailLineDomain> lines,
             View view = null,
-            string lineStyleName = "Тонкие линии",
-            ObservableCollection<ElementId> createdLineIds = null);
+            string lineStyleName = "Тонкие линии");
         CSharpFunctionalExtensions.Result DeleteLines(
-                ObservableCollection<ElementId> lineIds,
+                List<string> lineIdString,
                 Transaction transaction = null);
     }
 }

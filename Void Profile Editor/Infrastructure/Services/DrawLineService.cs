@@ -1,12 +1,13 @@
-﻿using Autodesk.Revit.UI;
+﻿using Autodesk.Revit.DB;
 using System;
-using System.Linq;
-using Autodesk.Revit.DB;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Void_Profile_Editor.Domain.Abstraction.Services;
+using System.Linq;
+using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.Infrastructure.Adapters;
 
-namespace Void_Profile_Editor.Domain.Services
+namespace Void_Profile_Editor.Infrastructure.Services
 {
     public class DrawLineService : IDrawLineService
     {
@@ -15,29 +16,39 @@ namespace Void_Profile_Editor.Domain.Services
         {
             _document = document;
         }
-        public CSharpFunctionalExtensions.Result DrawLine(Line line,
-            Transaction transaction = null,
+        public CSharpFunctionalExtensions.Result<List<string>> DrawLine(
+            string trMessage,
+            List<DetailLineDomain> linesDomain,
             View view = null,
-            string lineStyleName = "Тонкие линии",
-            ObservableCollection<ElementId> createdLineIds = null)
+            string lineStyleName = "Тонкие линии"
+            )
         {
+            if (linesDomain == null || linesDomain.Count() == 0)
+                return CSharpFunctionalExtensions.Result.Failure<List<string>>("Список линий не создан или пуст");
 
-            if (transaction == null)
-                throw new InvalidOperationException("Метод может вызван только внутри транзакции");
             if (view == null)
                 view = _document.ActiveView;
-            DetailLine detailLine = _document.Create.NewDetailCurve(view, line) as DetailLine;
-            if (createdLineIds != null)
-                createdLineIds.Add(detailLine.Id);
-            if (detailLine != null)
+
+            GraphicsStyle lineStyle = GetLineStyleByName(_document, lineStyleName);
+            List<string> createdLinesIdsDomain = new List<string>();
+
+            using (Transaction tr = new Transaction(_document, trMessage))
             {
-                GraphicsStyle lineStyle = GetLineStyleByName(_document, lineStyleName);
-                if (lineStyle != null)
+                foreach (var line in linesDomain)
                 {
-                    detailLine.LineStyle = lineStyle;
+                    DetailLine revitlLine = _document.Create.NewDetailCurve(view, line.ToRevit()) as DetailLine;
+                    if (revitlLine != null)
+                    {
+                        revitlLine.LineStyle = lineStyle;
+                        createdLinesIdsDomain.Add(revitlLine.Id.ToDomain());
+                    }
                 }
             }
-            return CSharpFunctionalExtensions.Result.Success();
+            if (linesDomain.Count == createdLinesIdsDomain.Count)
+                return createdLinesIdsDomain;
+            else
+                return CSharpFunctionalExtensions.Result.Failure<List<string>>(
+                    $"Не удалось создать {linesDomain.Count - createdLinesIdsDomain.Count} линий");
         }
         private GraphicsStyle GetLineStyleByName(Document doc, string styleName)
         {
@@ -76,7 +87,7 @@ namespace Void_Profile_Editor.Domain.Services
 
                 // Удаляем элементы
                 _document.Delete(validIds);
-                lineIds.Clear();                
+                lineIds.Clear();
 
                 return CSharpFunctionalExtensions.Result.Success();
             }

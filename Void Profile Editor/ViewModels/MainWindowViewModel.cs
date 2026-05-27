@@ -40,6 +40,8 @@ namespace Void_Profile_Editor.ViewModels
 
         // Fields
         private ResultSelectInstanceUseCase _resultSelectInstanceUseCase;
+        private ResultCreateContourUseCase _resultCreateContourUseCase;
+
 
         private Document _document;
         private FamilyInstance _instance;
@@ -156,19 +158,9 @@ namespace Void_Profile_Editor.ViewModels
             var result = await _selectInstanceUseCase.RunAsync();
             if (result.IsSuccess)
                 _resultSelectInstanceUseCase=result.Value;
+            else TaskDialog.Show("Test", $"Error:{result.Error}");
         }
-        private void SelectFamilyInstance()
-        {
-            var result = _selectionService.PickObject()
-                        .Tap(instance => Instance = instance)
-                        .Tap(instance => PressureContour = null)
-                        .Tap(instance => ContourHalfH0 = null)
-                        .Bind(i => _pressureCounturInformationService.CreatePressureContourInfo(i))
-                        .Tap(pc => PressureContour = pc);
-            if (result.IsFailure)
-                TaskDialog.Show("Test", $"Error:{result.Error}");
-
-        }
+        
 
         #endregion
         #region Method Execute for CreateContourCommand

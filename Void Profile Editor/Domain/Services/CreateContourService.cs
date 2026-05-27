@@ -2,23 +2,22 @@
 using System;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.Infrastructure.Abstraction;
 
 namespace Void_Profile_Editor.Domain.Services
 {
     public class CreateContourService :ICreateContourService
-    {
-        private Document _document;
+    {        
         private IGeometryService _geometryService;
         private IDrawLineService _drawLineService;
         
-        public CreateContourService(Document document, IGeometryService geometryService, IDrawLineService drawLineService) 
-        {
-            _document = document;
+        public CreateContourService(Document document, IGeometryService geometryService, IDrawLineService drawLineService)         {
+            
             _geometryService = geometryService;
             _drawLineService=drawLineService;
         }
         public CSharpFunctionalExtensions.Result<Contour> Create
-            (XYZ locationPoint,
+            (Point3DDomain locationPoint,
             double rotationAngle,
             double h0,
             double thickness,
@@ -28,24 +27,24 @@ namespace Void_Profile_Editor.Domain.Services
             try
             {
                 // вычисляем координаты углов контура
-                XYZ bottomRight = new XYZ
+                var bottomRight = new Point3DDomain
                     (locationPoint.X + thickness / 2 + offset,
                     locationPoint.Y - offset,
                     0);                
-                XYZ bottomLeft = new XYZ
+                var bottomLeft = new Point3DDomain
                     (locationPoint.X - thickness / 2 - offset,
                     locationPoint.Y - offset,
                     0);
-                XYZ topRight = new XYZ
+                var topRight = new Point3DDomain
                     (locationPoint.X + thickness / 2 + offset,
                     locationPoint.Y + thickness + 0.5 * h0,
                     0);
-                XYZ topLeft = new XYZ
+                var topLeft = new Point3DDomain
                     (locationPoint.X - thickness / 2 - offset,
                     locationPoint.Y + thickness + 0.5 * h0,
                     0);
-                XYZ topMiddle = (topRight + topLeft) / 2;
-                XYZ center = new XYZ
+                var topMiddle = (topRight + topLeft) / 2;
+                var center = new XYZ
                     (locationPoint.X,
                     locationPoint.Y + (thickness + 0.5 * h0) * 0.5,
                     0);                    

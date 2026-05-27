@@ -31,6 +31,10 @@ namespace Void_Profile_Editor.Domain.Model.Geometry
             Math.Abs(X - other.X) < 1e-9 &&
             Math.Abs(Y - other.Y) < 1e-9 &&
             Math.Abs(Z - other.Z) < 1e-9;
-        
+
+        public static Point3DDomain operator +(Point3DDomain a, Point3DDomain b) =>
+            new Point3DDomain(a.X+b.X,a.Y+b.Y,a.Z+b.Z);      
+        public static Point3DDomain operator /(Point3DDomain a, double k) =>
+            new Point3DDomain(a.X/k, a.Y/k, a.Z/k);
     }
 }
