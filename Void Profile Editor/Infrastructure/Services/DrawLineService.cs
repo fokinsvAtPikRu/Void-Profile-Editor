@@ -16,7 +16,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
         {
             _document = document;
         }
-        public CSharpFunctionalExtensions.Result<List<string>> DrawLine(
+        public CSharpFunctionalExtensions.Result<List<string>> DrawLines(
             string trMessage,
             List<DetailLineDomain> linesDomain,
             View view = null,

@@ -10,6 +10,7 @@ namespace Void_Profile_Editor.UseCases
     public class ResultCreateContourUseCase
     {
         public Contour Contour6H0 { get; set; }
-        private Contour _contourHalfH0 { get; set; }
+        public Contour ContourHalfH0 { get; set; }
+        public List<string> LinesIdsForDelete { get; set; }
     }
 }

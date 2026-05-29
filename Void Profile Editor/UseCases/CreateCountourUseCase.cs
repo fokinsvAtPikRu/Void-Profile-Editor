@@ -14,18 +14,28 @@ namespace Void_Profile_Editor.UseCases
         {
             _createContourService = createContourService;
         }
-        private Result<ResultCreateContourUseCase> CreateContour(ResultSelectInstanceUseCase instance)
+        private Result<ResultCreateContourUseCase> CreateContour(ResultSelectInstanceUseCase resultSelectInstanceUseCase)
         {
-            if (instance == null)            
-                return Result.Failure<ResultCreateContourUseCase>("Семейство не выбрано");
-            
-            if (instance.PressureContour == null)
+            if (resultSelectInstanceUseCase == null)
+                return Result.Failure<ResultCreateContourUseCase>("ResultSelectInstanceUseCase resultSelectInstanceUseCase == null");
+            if (resultSelectInstanceUseCase.PressureContour == null)
                 return Result.Failure<ResultCreateContourUseCase>("Контур продавливания не создан");
-            var result = Create6H0Contour().
-                        Bind(c => DrawContour(c)).
-                        Bind(() => CreateHalfH0Contour());
-            if (result.IsFailure)
-                TaskDialog.Show("Test", $"Error:{result.Error}");
+            PressureContour pressureContour = resultSelectInstanceUseCase.PressureContour;
+            var resultCreate6H0Contour = Create6H0Contour(pressureContour);
+            if (resultCreate6H0Contour.IsFailure)
+                return Result.Failure<ResultCreateContourUseCase>(resultCreate6H0Contour.Error);
+            var resutDrawContour = _createContourService.DrawContour(resultCreate6H0Contour.Value);
+            if (resutDrawContour.IsFailure)
+                return Result.Failure<ResultCreateContourUseCase>(resutDrawContour.Error);
+            var resultCreateHalfH0Contour = CreateHalfH0Contour(pressureContour);
+            if (resultCreateHalfH0Contour.IsFailure)
+                return Result.Failure<ResultCreateContourUseCase>(resultCreateHalfH0Contour.Error);
+            return new ResultCreateContourUseCase
+            {
+                Contour6H0 = resultCreate6H0Contour.Value,
+                ContourHalfH0 = resultCreateHalfH0Contour.Value,
+                LinesIdsForDelete = resutDrawContour.Value
+            };
         }
         private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour(PressureContour pressureContour)
         {
@@ -38,16 +48,16 @@ namespace Void_Profile_Editor.UseCases
                 pressureContour.IsMirrored).Value;
             
         }
-        private CSharpFunctionalExtensions.Result<Contour> CreateHalfH0Contour()
+        private CSharpFunctionalExtensions.Result<Contour> CreateHalfH0Contour(PressureContour pressureContour)
         {
-            ContourHalfH0 = _createContourService.Create(
-               _pressureContour.InsertPoint,
-               _pressureContour.Rotation,
-               _pressureContour.ContourParameters.DoubleParameters["h0"],
-               _pressureContour.ContourParameters.DoubleParameters["Толщина"],
-               0.5 * _pressureContour.ContourParameters.DoubleParameters["h0"],
-               _instance.Mirrored).Value;
-            return CSharpFunctionalExtensions.Result.Success<Contour>(ContourHalfH0);
+            return _createContourService.Create(
+               pressureContour.InsertPoint,
+               pressureContour.Rotation,
+               pressureContour.ContourParameters.DoubleParameters["h0"],
+               pressureContour.ContourParameters.DoubleParameters["Толщина"],
+               0.5 * pressureContour.ContourParameters.DoubleParameters["h0"],
+               pressureContour.IsMirrored).Value;
+            
         }
     }
 }

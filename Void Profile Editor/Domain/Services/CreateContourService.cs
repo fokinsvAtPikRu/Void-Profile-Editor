@@ -1,8 +1,10 @@
 ﻿using Autodesk.Revit.DB;
 using System;
+using System.Collections.Generic;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.Infrastructure.Adapters;
 
 namespace Void_Profile_Editor.Domain.Services
 {
@@ -11,7 +13,7 @@ namespace Void_Profile_Editor.Domain.Services
         private IGeometryService _geometryService;
         private IDrawLineService _drawLineService;
         
-        public CreateContourService(Document document, IGeometryService geometryService, IDrawLineService drawLineService)         {
+        public CreateContourService(IGeometryService geometryService, IDrawLineService drawLineService)         {
             
             _geometryService = geometryService;
             _drawLineService=drawLineService;
@@ -44,30 +46,30 @@ namespace Void_Profile_Editor.Domain.Services
                     locationPoint.Y + thickness + 0.5 * h0,
                     0);
                 var topMiddle = (topRight + topLeft) / 2;
-                var center = new XYZ
+                var center = new Point3DDomain
                     (locationPoint.X,
                     locationPoint.Y + (thickness + 0.5 * h0) * 0.5,
                     0);                    
 
                 rotationAngle = isMirrored ? (rotationAngle - Math.PI) % (2 * Math.PI) : rotationAngle % (2 * Math.PI);
                 // поворачиваем контур
-                bottomRight = _geometryService.RotatePointAroundAxis(bottomRight, locationPoint, XYZ.BasisZ, rotationAngle);
-                bottomLeft = _geometryService.RotatePointAroundAxis(bottomLeft, locationPoint, XYZ.BasisZ, rotationAngle);
-                topRight = _geometryService.RotatePointAroundAxis(topRight, locationPoint, XYZ.BasisZ, rotationAngle);
-                topLeft = _geometryService.RotatePointAroundAxis(topLeft, locationPoint, XYZ.BasisZ, rotationAngle);
-                topMiddle = _geometryService.RotatePointAroundAxis(topMiddle, locationPoint, XYZ.BasisZ, rotationAngle);
-                center=_geometryService.RotatePointAroundAxis(center, locationPoint, XYZ.BasisZ, rotationAngle);
+                bottomRight = _geometryService.RotatePointAroundAxis(bottomRight, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
+                bottomLeft = _geometryService.RotatePointAroundAxis(bottomLeft, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
+                topRight = _geometryService.RotatePointAroundAxis(topRight, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
+                topLeft = _geometryService.RotatePointAroundAxis(topLeft, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
+                topMiddle = _geometryService.RotatePointAroundAxis(topMiddle, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
+                center=_geometryService.RotatePointAroundAxis(center, locationPoint, XYZ.BasisZ.ToDomain(), rotationAngle);
 
 
                 if (!isMirrored)
                 {
                     Contour contour = new Contour()
                     {
-                        TopLeft = Line.CreateBound(topMiddle, topLeft),
-                        Left = Line.CreateBound(topLeft, bottomLeft),
-                        Bottom = Line.CreateBound(bottomLeft, bottomRight),
-                        Right = Line.CreateBound(topRight,bottomRight),
-                        TopRight = Line.CreateBound(topRight, topMiddle),
+                        TopLeft = new DetailLineDomain(topMiddle, topLeft),
+                        Left = new DetailLineDomain(topLeft, bottomLeft),
+                        Bottom = new DetailLineDomain(bottomLeft, bottomRight),
+                        Right = new DetailLineDomain(topRight,bottomRight),
+                        TopRight = new DetailLineDomain(topRight, topMiddle),
                         Center = center
 
                     };
@@ -77,11 +79,11 @@ namespace Void_Profile_Editor.Domain.Services
                 {
                     Contour contour = new Contour()
                     {
-                        TopLeft = Line.CreateBound(topMiddle, topRight),
-                        Left = Line.CreateBound(topRight, bottomRight),
-                        Bottom = Line.CreateBound(bottomRight, bottomLeft),
-                        Right = Line.CreateBound(topLeft,bottomLeft),
-                        TopRight = Line.CreateBound(topLeft, topMiddle),
+                        TopLeft = new DetailLineDomain(topMiddle, topRight),
+                        Left = new DetailLineDomain(topRight, bottomRight),
+                        Bottom = new DetailLineDomain(bottomRight, bottomLeft),
+                        Right = new DetailLineDomain(topLeft,bottomLeft),
+                        TopRight = new DetailLineDomain(topLeft, topMiddle),
                         Center = center
 
                     };
@@ -93,27 +95,18 @@ namespace Void_Profile_Editor.Domain.Services
                 return CSharpFunctionalExtensions.Result.Failure<Contour>(ex.Message);
             }
         }
-        public CSharpFunctionalExtensions.Result DrawContour(Contour contour)
+        public CSharpFunctionalExtensions.Result<List<string>> DrawContour(Contour contour)
         {
-            try
-            {
-                using (var t = new Transaction(_document, "Построение контура"))
-                {
-                    t.Start();
-
-                    _drawLineService.DrawLine(line: contour.Bottom, transaction: t);
-                    _drawLineService.DrawLine(line: contour.Left, transaction: t);
-                    _drawLineService.DrawLine(line: contour.Right, transaction: t);
-
-
-                    t.Commit();
-                }
-                return CSharpFunctionalExtensions.Result.Success();
-            }
-            catch (Exception ex)
-            {
-                return CSharpFunctionalExtensions.Result.Failure(ex.Message);
-            }
+            List<DetailLineDomain> contourLines = new List<DetailLineDomain>();
+            contourLines.Add(contour.Left);
+            contourLines.Add(contour.Bottom);
+            contourLines.Add(contour.Right);
+            var result=_drawLineService.DrawLines("рисование 6H0 контура",contourLines);
+            if (result.IsSuccess)
+                return result.Value;
+            else
+                return result;
+            
         }
     }
 }

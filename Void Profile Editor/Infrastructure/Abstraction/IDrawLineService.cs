@@ -11,9 +11,9 @@ namespace Void_Profile_Editor.Infrastructure.Abstraction
 {
     public interface IDrawLineService
     {
-        CSharpFunctionalExtensions.Result<List<string>> DrawLine(
+        CSharpFunctionalExtensions.Result<List<string>> DrawLines(
             string trMessage,
-            List<DetailLineDomain> lines,
+            List<DetailLineDomain> linesDomain,
             View view = null,
             string lineStyleName = "Тонкие линии");
         CSharpFunctionalExtensions.Result DeleteLines(

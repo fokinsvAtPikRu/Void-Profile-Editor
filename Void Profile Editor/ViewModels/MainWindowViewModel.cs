@@ -43,8 +43,8 @@ namespace Void_Profile_Editor.ViewModels
         private ResultCreateContourUseCase _resultCreateContourUseCase;
 
 
-        private Document _document;
-        private FamilyInstance _instance;
+        //private Document _document;
+        //private FamilyInstance _instance;
         private PressureContour _pressureContour;
         private Contour _contour6H0;
         private Contour _contourHalfH0;
@@ -170,12 +170,7 @@ namespace Void_Profile_Editor.ViewModels
             await _revitTask.Run(app => CreateContour());
         }
         private void CreateContour()
-        {
-            if (Instance == null)
-            {
-                TaskDialog.Show("Ошибка", "Семейство не выбрано");
-                return;
-            }
+        {            
             if (PressureContour == null)
             {
                 TaskDialog.Show("Ошибка", "Контур не создан");

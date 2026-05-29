@@ -2,6 +2,7 @@
 using System;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.Infrastructure.Adapters;
 
 namespace Void_Profile_Editor.Domain.Services
 {
@@ -15,19 +16,19 @@ namespace Void_Profile_Editor.Domain.Services
         /// <param name="axis">направление оси вращения</param>
         /// <param name="angle">угол поворота в радианах</param>
         /// <returns></returns>
-        public XYZ RotatePointAroundAxis(XYZ point, XYZ center, XYZ axis, double angle)
+        public Point3DDomain RotatePointAroundAxis(Point3DDomain point, Point3DDomain center, Point3DDomain axis, double angle)
         {
             // Создаем матрицу вращения
-            Transform rotation = Transform.CreateRotation(axis, angle);
+            Transform rotation = Transform.CreateRotation(axis.ToRevit(), angle);
 
             // Смещаем точку относительно центра вращения
-            XYZ translatedPoint = point - center;
+            XYZ translatedPoint = point.ToRevit() - center.ToRevit();
 
             // Поворачиваем точку
             XYZ rotatedTranslatedPoint = rotation.OfPoint(translatedPoint);
 
             // Возвращаем точку в исходную систему координат
-            return rotatedTranslatedPoint + center;
+            return (rotatedTranslatedPoint + center.ToRevit()).ToDomain();
         }
 
         public CSharpFunctionalExtensions.Result<IntersectionPoint[]> LineWithContourIntersection(Line[] lines, Contour contour)
