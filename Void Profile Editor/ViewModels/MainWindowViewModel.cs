@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
-using Void_Profile_Editor.UseCases;
+using Void_Profile_Editor.UseCases.Abstraction;
+using Void_Profile_Editor.UseCases.Results;
 
 namespace Void_Profile_Editor.ViewModels
 {
@@ -19,6 +20,7 @@ namespace Void_Profile_Editor.ViewModels
     {
         #region UseCases
         private readonly ISelectInstanceUseCase _selectInstanceUseCase;
+        private readonly ICreateContourUserCase _createContourUserCase;
         #region
         #region Fields
         // RevitTask
@@ -158,10 +160,8 @@ namespace Void_Profile_Editor.ViewModels
             var result = await _selectInstanceUseCase.RunAsync();
             if (result.IsSuccess)
                 _resultSelectInstanceUseCase=result.Value;
-            else TaskDialog.Show("Test", $"Error:{result.Error}");
+            else TaskDialog.Show("Error", $"Error:{result.Error}");
         }
-        
-
         #endregion
         #region Method Execute for CreateContourCommand
         // Method Execute for CreateContourCommand
@@ -170,64 +170,13 @@ namespace Void_Profile_Editor.ViewModels
             await _revitTask.Run(app => CreateContour());
         }
         private void CreateContour()
-        {            
-            if (PressureContour == null)
-            {
-                TaskDialog.Show("Ошибка", "Контур не создан");
-                return;
-            }
-            var result = Create6H0Contour().
-                        Bind(c => DrawContour(c)).
-                        Bind(() => CreateHalfH0Contour());
+        {
+            var result = _createContourUserCase.CreateContour(_resultSelectInstanceUseCase);
             if (result.IsFailure)
-                TaskDialog.Show("Test", $"Error:{result.Error}");
-        }
-        private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour()
-        {
-            _contour6H0 = _createContourService.Create(
-                _pressureContour.InsertPoint,
-                _pressureContour.Rotation,
-                _pressureContour.ContourParameters.DoubleParameters["h0"],
-                _pressureContour.ContourParameters.DoubleParameters["Толщина"],
-                6 * _pressureContour.ContourParameters.DoubleParameters["h0"],
-                _instance.Mirrored).Value;
-            return CSharpFunctionalExtensions.Result.Success<Contour>(_contour6H0);
-        }
-        private CSharpFunctionalExtensions.Result<Contour> CreateHalfH0Contour()
-        {
-            ContourHalfH0 = _createContourService.Create(
-               _pressureContour.InsertPoint,
-               _pressureContour.Rotation,
-               _pressureContour.ContourParameters.DoubleParameters["h0"],
-               _pressureContour.ContourParameters.DoubleParameters["Толщина"],
-               0.5 * _pressureContour.ContourParameters.DoubleParameters["h0"],
-               _instance.Mirrored).Value;
-            return CSharpFunctionalExtensions.Result.Success<Contour>(ContourHalfH0);
-        }
-        private CSharpFunctionalExtensions.Result DrawContour(Contour contour)
-        {
-            try
-            {
-                using (Transaction tr = new Transaction(_document, "Контур 6h0"))
-                {
-                    tr.Start();
-                    foreach (var line in contour)
-                    {
-                        if (line.Key == ContourSideName.TopLeft || line.Key == ContourSideName.TopRight)
-                            continue;
-                        _drawLineService.DrawLine(line: line.Value,
-                            transaction: tr,
-                            createdLineIds: _createdLineIds);
-                    }
-                    tr.Commit();
-                }
-                return CSharpFunctionalExtensions.Result.Success();
-            }
-            catch (Exception ex)
-            {
-                return CSharpFunctionalExtensions.Result.Failure(ex.Message);
-            }
-        }
+                TaskDialog.Show("Error", $"Error:{result.Error}");
+            else
+                _resultCreateContourUseCase=result.Value;
+        }        
         #endregion
         #region CanExecute for CreateContourCommand
         private bool CanCreateContourCommandExecute() => Instance != null;

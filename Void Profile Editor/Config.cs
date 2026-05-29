@@ -11,7 +11,8 @@ using Void_Profile_Editor.Domain.Models.Geometry;
 using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Services;
-using Void_Profile_Editor.UseCases;
+using Void_Profile_Editor.UseCases.Abstraction;
+using Void_Profile_Editor.UseCases.Cases;
 using Void_Profile_Editor.ViewModels;
 using Void_Profile_Editor.Views;
 

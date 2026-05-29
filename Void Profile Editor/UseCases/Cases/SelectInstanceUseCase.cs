@@ -1,8 +1,10 @@
 ﻿using CSharpFunctionalExtensions;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.UseCases.Abstraction;
+using Void_Profile_Editor.UseCases.Results;
 
-namespace Void_Profile_Editor.UseCases
+namespace Void_Profile_Editor.UseCases.Cases
 {
     public class SelectInstanceUseCase : ISelectInstanceUseCase
     {

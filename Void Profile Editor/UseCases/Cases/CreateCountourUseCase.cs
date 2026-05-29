@@ -3,10 +3,12 @@ using CSharpFunctionalExtensions;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.Infrastructure.Adapters;
+using Void_Profile_Editor.UseCases.Abstraction;
+using Void_Profile_Editor.UseCases.Results;
 
-namespace Void_Profile_Editor.UseCases
+namespace Void_Profile_Editor.UseCases.Cases
 {
-    public class CreateCountourUseCase
+    public class CreateCountourUseCase : ICreateContourUserCase
     {
         private readonly CreateContourService _createContourService;
 
@@ -14,7 +16,7 @@ namespace Void_Profile_Editor.UseCases
         {
             _createContourService = createContourService;
         }
-        private Result<ResultCreateContourUseCase> CreateContour(ResultSelectInstanceUseCase resultSelectInstanceUseCase)
+        public Result<ResultCreateContourUseCase> CreateContour(ResultSelectInstanceUseCase resultSelectInstanceUseCase)
         {
             if (resultSelectInstanceUseCase == null)
                 return Result.Failure<ResultCreateContourUseCase>("ResultSelectInstanceUseCase resultSelectInstanceUseCase == null");
@@ -37,7 +39,7 @@ namespace Void_Profile_Editor.UseCases
                 LinesIdsForDelete = resutDrawContour.Value
             };
         }
-        private CSharpFunctionalExtensions.Result<Contour> Create6H0Contour(PressureContour pressureContour)
+        private Result<Contour> Create6H0Contour(PressureContour pressureContour)
         {
             return _createContourService.Create(
                 pressureContour.InsertPoint,
@@ -48,7 +50,7 @@ namespace Void_Profile_Editor.UseCases
                 pressureContour.IsMirrored).Value;
             
         }
-        private CSharpFunctionalExtensions.Result<Contour> CreateHalfH0Contour(PressureContour pressureContour)
+        private Result<Contour> CreateHalfH0Contour(PressureContour pressureContour)
         {
             return _createContourService.Create(
                pressureContour.InsertPoint,
