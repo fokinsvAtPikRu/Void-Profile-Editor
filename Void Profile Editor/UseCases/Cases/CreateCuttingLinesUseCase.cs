@@ -1,4 +1,5 @@
 ﻿
+using Autodesk.Revit.DB;
 using CSharpFunctionalExtensions;
 using System;
 using System.Linq;
@@ -25,67 +26,39 @@ namespace Void_Profile_Editor.UseCases.Cases
             _geometryService = geometryService;
             _pressureCounturInformationService = pressureCounturInformationService;
         }
-        private void CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour)
+        private Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour)
         {
-            if (contourHalfH0 == null) 
+            if (contourHalfH0 == null)
+                return Result.Failure("Контур 0.5h0 не создан");
+            if (pressureContour == null)
+                return Result.Failure("Контур продавливания не создан");
 
-            try
+            var cuttingLines = new DetailLineDomain[2];
+            for (var i = 0; i < cuttingLines.Length; i++)
             {
-
-
-
-
-                var cuttingLines = new Line[2];
-                // указываем первую точку для создания секущей линии 
-                _selectionService.PickPoint()
-                    // обнуляем координату Z у точки 
-                    .Bind((point) =>
-                    {
-                        return CSharpFunctionalExtensions.Result.Success(new XYZ(point.X, point.Y, 0));
-                    })
-                    // строим первую секущую линию
-                    .Bind((point) =>
-                    {
-                        if (contourHalfH0 == null)
-                            return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
-                        cuttingLines[0] = Line.CreateBound(point, contourHalfH0.Center);
-                        return CSharpFunctionalExtensions.Result.Success(cuttingLines);
-                    })
-                    // повторяем, строим вторую секущую линию
-                    .Bind(() => _selectionService.PickPoint())
-                    .Bind((point) =>
-                    {
-                        return CSharpFunctionalExtensions.Result.Success(new XYZ(point.X, point.Y, 0));
-                    })
-                    .Bind((point) =>
-                    {
-                        cuttingLines[1] = Line.CreateBound(point, contourHalfH0.Center);
-                        return CSharpFunctionalExtensions.Result.Success(cuttingLines);
-                    })
-                    // ищем точки пересечения секущих линий с контуром 0.5H0
-                    .Bind((lines) => FindIntersection(contourHalfH0, lines))
-                    // упорядочиваем _intersectionPoints
-                    .Bind((points) =>
-                    {
-                        if (points[0] == null || points[1] == null)
-                            return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Не заданы секущие линии");
-                        return points
-                            .OrderBy(p => p.SideName)
-                            .ThenBy(p => p.Point.DistanceTo(contourHalfH0.GetLine(p.SideName).GetEndPoint(0)))
-                            .ToArray();
-
-                    })
-                    // вычисляем параметры
-                    .Bind((points) => _geometryService.CalculateParameters(contourHalfH0, points, pressureContour))
-                    // сохраняем параметры
-                    .Bind(() => _pressureCounturInformationService.UpdateParameters(_document, _instance, _pressureContour.ContourParameters));
+                var resultPickPoint = _selectionService.PickPoint();
+                if (resultPickPoint.IsFailure)
+                    return Result.Failure(resultPickPoint.Error);
+                Point3DDomain point = new Point3DDomain(
+                    resultPickPoint.Value.X,
+                    resultPickPoint.Value.Y,
+                    0);
+                cuttingLines[i] = new DetailLineDomain(point, contourHalfH0.Center);
             }
-            catch (Exception ex)
-            {
-                TaskDialog.Show("Error", $"Error:{ex.Message}");
-            }
+            var resutIntersectionPoints = FindIntersection(contourHalfH0, cuttingLines);
+            if (resutIntersectionPoints.IsFailure)
+                return Result.Failure(resutIntersectionPoints.Error);
+            var orderedPoints = resutIntersectionPoints.Value
+                .OrderBy(p => p.SideName)
+                .ThenBy(p => p.Point.DistanceTo(contourHalfH0.GetLine(p.SideName).Start))
+                .ToArray();
+            _geometryService.CalculateParameters(contourHalfH0, orderedPoints, pressureContour);
+            var resultUpdateParameters = _pressureCounturInformationService.UpdateParameters(pressureContour);
+            if (resultUpdateParameters.IsFailure)
+                return Result.Failure("не удалось обновить параметры");
+            return Result.Success();           
         }
-        private Result<IntersectionPoint[]> FindIntersection(Contour contourHalfH0, Line[] cuttingLines)
+        private Result<IntersectionPoint[]> FindIntersection(Contour contourHalfH0, DetailLineDomain[] cuttingLines)
         {
             if (contourHalfH0 == null)
                 return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Контур 0,5H0 не создан");
@@ -93,9 +66,9 @@ namespace Void_Profile_Editor.UseCases.Cases
                 return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Секущие линии не созданы");
             var result = _geometryService.LineWithContourIntersection(cuttingLines, contourHalfH0);
             if (result.IsSuccess)
-                return result.Value;
+                return result;
             else
-                return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Точки пересечения не найдены");
+                return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>($"Ошибка {result.Error}");
 
         }
     }

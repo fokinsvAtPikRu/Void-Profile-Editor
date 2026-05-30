@@ -6,9 +6,7 @@
         public Point3DDomain InsertPoint { get; set; }
         public double Rotation { get; set; }        
         public bool IsMirrored { get; set; }
-
-        public PressureContourParameters ContourParameters { get; set; }
-        
+        public PressureContourParameters ContourParameters { get; set; }      
         
 
         public static PressureContour FromRevitData(

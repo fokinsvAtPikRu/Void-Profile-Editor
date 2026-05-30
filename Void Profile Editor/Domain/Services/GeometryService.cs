@@ -31,7 +31,7 @@ namespace Void_Profile_Editor.Domain.Services
             return (rotatedTranslatedPoint + center.ToRevit()).ToDomain();
         }
 
-        public CSharpFunctionalExtensions.Result<IntersectionPoint[]> LineWithContourIntersection(Line[] lines, Contour contour)
+        public CSharpFunctionalExtensions.Result<IntersectionPoint[]> LineWithContourIntersection(DetailLineDomain[] lines, Contour contour)
         {
             IntersectionPoint[] results = new IntersectionPoint[2];
             IntersectionResultArray result;
@@ -39,21 +39,22 @@ namespace Void_Profile_Editor.Domain.Services
             {
                 for (var i = 0; i < 2; i++)
                 {
-                    SetComparisonResult comparison = contourLine.Value.Intersect(lines[i], out result);
+                    SetComparisonResult comparison = contourLine.Value.ToRevit().Intersect(lines[i].ToRevit(), out result);
                     if (result != null)
                     {
                         if (result.Size != 1)
                         {
-                            return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>("Точек пересечения больше одной");                            
+                            return CSharpFunctionalExtensions.Result.Failure<IntersectionPoint[]>($"Для линии {i} точек пересечения больше одной");                            
                         }
-                        results[i] = new IntersectionPoint(result.get_Item(0).XYZPoint, contourLine.Key);                        
+                        results[i] = new IntersectionPoint(result.get_Item(0).XYZPoint.ToDomain(), contourLine.Key);                        
                     }
                 }
             }
-            return CSharpFunctionalExtensions.Result.Success(results);
+            
+            return results;
         }
 
-        public CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
+        public void CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
         {
             var parameters = pressureContour.ContourParameters;            
 
@@ -73,8 +74,8 @@ namespace Void_Profile_Editor.Domain.Services
                     if (edge.Key == points[1].SideName)
                     // если вторая точка на той же грани - задаем отверстие 
                     {
-                        var distance = CalculateDistance(points[0].Point, points[1].Point);
-                        var offset = CalculateOffset(points[0].Point, points[1].Point, edge.Value.GetEndPoint(0));
+                        var distance = CalculateDistance(points[0].Point.ToRevit(), points[1].Point.ToRevit());
+                        var offset = CalculateOffset(points[0].Point.ToRevit(), points[1].Point.ToRevit(), edge.Value.Start.ToRevit());
                         string parameterNameHoleOffset;
                         string parameterNameHoleWidth;
                         GetParameterNameForSetHole(edge.Key, out parameterNameHoleWidth, out parameterNameHoleOffset);
@@ -88,9 +89,9 @@ namespace Void_Profile_Editor.Domain.Services
                     else
                     {
                         var endEdgePoint = points[0].SideName == ContourSideName.Right ?
-                            edge.Value.GetEndPoint(0) :
-                            edge.Value.GetEndPoint(1);
-                        var distance = CalculateDistance(points[0].Point, endEdgePoint);
+                            edge.Value.Start :
+                            edge.Value.End;
+                        var distance = CalculateDistance(points[0].Point.ToRevit(), endEdgePoint.ToRevit());
                         string parameterNameOffset = GetParameterNameForOffset(edge.Key, false);
                         if (string.IsNullOrEmpty(parameterNameOffset))
                             continue;
@@ -111,9 +112,9 @@ namespace Void_Profile_Editor.Domain.Services
                 if (firstPointIsFounded && edge.Key == points[1].SideName)
                 {
                     var startEdgePoint = points[1].SideName == ContourSideName.Right ?
-                            edge.Value.GetEndPoint(1) :
-                            edge.Value.GetEndPoint(0);
-                    var distance = CalculateDistance(points[1].Point, startEdgePoint);
+                            edge.Value.End :
+                            edge.Value.Start;
+                    var distance = CalculateDistance(points[1].Point.ToRevit(), startEdgePoint.ToRevit());
                     string parameterNameOffset = GetParameterNameForOffset(edge.Key, true);
                     if (string.IsNullOrEmpty(parameterNameOffset))
                         continue;
