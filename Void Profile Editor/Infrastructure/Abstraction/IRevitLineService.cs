@@ -9,15 +9,13 @@ using Void_Profile_Editor.Domain.Model.Geometry;
 
 namespace Void_Profile_Editor.Infrastructure.Abstraction
 {
-    public interface IDrawLineService
+    public interface IRevitLineService
     {
         CSharpFunctionalExtensions.Result<List<string>> DrawLines(
             string trMessage,
             List<DetailLineDomain> linesDomain,
             View view = null,
             string lineStyleName = "Тонкие линии");
-        CSharpFunctionalExtensions.Result DeleteLines(
-                List<string> lineIdString,
-                Transaction transaction = null);
+        CSharpFunctionalExtensions.Result DeleteLines(List<string> lineIdsDomain);
     }
 }

@@ -6,11 +6,11 @@ using Void_Profile_Editor.Infrastructure.Adapters;
 
 namespace Void_Profile_Editor.Infrastructure.Services
 {
-    public class PressureCounturInformationService : IPressureCounturInformationService
+    public class RevitUpdateParametersService : IRevitUpdateParametersService
     {
         private Document _document;
         private IGeometryService _geometryService;
-        public PressureCounturInformationService(
+        public RevitUpdateParametersService(
             Document document,
             IGeometryService geometryService)
         {

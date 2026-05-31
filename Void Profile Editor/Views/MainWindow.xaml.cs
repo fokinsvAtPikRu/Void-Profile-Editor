@@ -41,6 +41,12 @@ namespace Void_Profile_Editor.Views
                 catch
                 {
                     _instance = null;
+                    if (_mutex != null)
+                    {
+                        try { _mutex.ReleaseMutex(); } catch { }
+                        _mutex.Dispose();
+                        _mutex = null;
+                    }
                 }
                 if (_instance != null)
                     return;
@@ -50,10 +56,23 @@ namespace Void_Profile_Editor.Views
             _mutex=new Mutex(true, MutexName, out createdNew);
             if (!createdNew) 
             {
-                TaskDialog.Show("Внимание", "Плагин уже запущен");
-                _mutex.Dispose();
-                _mutex = null;
-                return;
+                bool acquired = false;
+                try
+                {
+                    acquired = _mutex.WaitOne(TimeSpan.FromSeconds(1));
+                }
+                catch (AbandonedMutexException)
+                {
+                    // Мьютекс был брошен предыдущей аварией, теперь он наш
+                    acquired = true;
+                }
+                if (!acquired)
+                {
+                    TaskDialog.Show("Внимание", "Плагин уже запущен");
+                    _mutex.Dispose();
+                    _mutex = null;
+                    return;
+                }
             }
 
             var viewModel=serviceProvider.GetService<MainWindowViewModel>();
@@ -64,7 +83,7 @@ namespace Void_Profile_Editor.Views
                 _instance = null;
                 if (_mutex != null)
                 {
-                    _mutex.ReleaseMutex();
+                    try { _mutex.ReleaseMutex(); } catch { }
                     _mutex.Dispose();
                     _mutex = null;
                 }

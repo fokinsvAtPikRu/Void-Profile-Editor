@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 
-namespace Void_Profile_Editor.Domain.Services
+namespace Void_Profile_Editor.Infrastructure.Services
 {
     public class WindowService : IWindowService
     {

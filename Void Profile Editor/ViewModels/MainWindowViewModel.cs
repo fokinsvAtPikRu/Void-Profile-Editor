@@ -1,37 +1,26 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CSharpFunctionalExtensions;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
-using Void_Profile_Editor.Domain.Abstraction.Services;
-using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
-using Void_Profile_Editor.UseCases.Abstraction;
-using Void_Profile_Editor.UseCases.Results;
+using Void_Profile_Editor.UserCases.Abstraction;
+using Void_Profile_Editor.UserCases.Results;
+using Void_Profile_Editor.UserCases.Abstraction;
 
 namespace Void_Profile_Editor.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
         #region UseCases
-        private readonly ISelectInstanceUseCase _selectInstanceUseCase;
+        private readonly ISelectInstanceUserCase _selectInstanceUseCase;
         private readonly ICreateContourUserCase _createContourUserCase;
-        #region
+        private readonly ICreateCuttingLinesUserCase _createCuttingLinesUserCase;
+        private readonly IDeleteContuorLinesUserCases _deleteContuorLinesUserCases;
+        #endregion
         #region Fields
         // RevitTask
         private RevitTask _revitTask;
-
         // Services
-        private readonly ISelectionService _selectionService;
-        private readonly IPressureCounturInformationService _pressureCounturInformationService;
-        private readonly ICreateContourService _createContourService;
-        private readonly IDrawLineService _drawLineService;
-        private readonly IGeometryService _geometryService;
+        private readonly IRevitMessageService _revitMsaageService;
 
         // Commands
         private readonly AsyncRelayCommand _selectFamilyInstanceCommand;
@@ -39,99 +28,59 @@ namespace Void_Profile_Editor.ViewModels
         private readonly AsyncRelayCommand _createCutingLinesCommand;
         private readonly AsyncRelayCommand _deleteContourCommand;
 
-
-        // Fields
-        private ResultSelectInstanceUseCase _resultSelectInstanceUseCase;
-        private ResultCreateContourUseCase _resultCreateContourUseCase;
-
-
-        //private Document _document;
-        //private FamilyInstance _instance;
-        private PressureContour _pressureContour;
-        private Contour _contour6H0;
-        private Contour _contourHalfH0;
-        private Line[] _cuttingLines;
-        private IntersectionPoint[] _intersectionPoints;
-        private ObservableCollection<ElementId> _createdLineIds = new ObservableCollection<ElementId>();
+        // Results UserCase
+        private ResultSelectInstanceUserCase _resultSelectInstanceUseCase;
+        private ResultCreateContourUserCase _resultCreateContourUseCase;
+       
 
         // Observable Properties
-        public FamilyInstance Instance
+        public ResultSelectInstanceUserCase ResultSelectInstanceUseCase
         {
-            get => _instance;
+            get => _resultSelectInstanceUseCase;
             set
             {
-                if (SetProperty(ref _instance, value))
+                if (SetProperty(ref _resultSelectInstanceUseCase, value))
                 {
                     _createContourCommand.NotifyCanExecuteChanged();
                 }
             }
         }
-        public PressureContour PressureContour
+        public ResultCreateContourUserCase ResultCreateContourUseCase
         {
-            get => _pressureContour;
+            get => _resultCreateContourUseCase;
             set
             {
-                if (SetProperty(ref _pressureContour, value))
+                if (SetProperty(ref _resultCreateContourUseCase, value))
                 {
                     _createCutingLinesCommand.NotifyCanExecuteChanged();
                 }
             }
         }
-        public Contour ContourHalfH0
-        {
-            get => _contourHalfH0;
-            set
-            {
-                if (SetProperty(ref _contourHalfH0, value))
-                {
-                    _createCutingLinesCommand.NotifyCanExecuteChanged();
-                }
-            }
-        }
-        public ObservableCollection<ElementId> CreatedLineIds
-        {
-            get => _createdLineIds;
-            set => SetProperty(ref _createdLineIds, value);
-        }
-
         #endregion
         #region ctor
         public MainWindowViewModel(
-            ISelectInstanceUseCase selectInstanceUseCase,
+            // Revit Task
             RevitTask revitTask,
-            Document document,
-            ISelectionService selection,
-            IPressureCounturInformationService pressureCounturInformationService,
-            ICreateContourService createContourService,
-            IDrawLineService drawLineService,
-            IGeometryService geometryService)
-        {
-            // UseCases
-            _selectInstanceUseCase = selectInstanceUseCase;
-
-            // Fields
-            _revitTask = revitTask;
-            _document = document;
-
+            // UserCases
+            ISelectInstanceUserCase selectInstanceUseCase,
+            ICreateContourUserCase createContourUserCase,
+            ICreateCuttingLinesUserCase createCuttingLinesUserCase,
+            IDeleteContuorLinesUserCases deleteContuorLinesUserCases,
             // Services
-            _selectionService = selection;
-            _pressureCounturInformationService = pressureCounturInformationService;
-            _createContourService = createContourService;
-            _drawLineService = drawLineService;
-            _geometryService = geometryService;
-
+            IRevitMessageService revitMessageService)
+        {
+            // Revit Task
+            _revitTask = revitTask;
+            // UserCases
+            _selectInstanceUseCase = selectInstanceUseCase;
+            _createContourUserCase = createContourUserCase;
+            _createCuttingLinesUserCase = createCuttingLinesUserCase;            
+            _deleteContuorLinesUserCases = deleteContuorLinesUserCases;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
             _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanCreateContourCommandExecute);
             _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLinesExecute, CanCreateCuttingLinesExecuted);
             _deleteContourCommand = new AsyncRelayCommand(AsyncDeleteLinesExecute, CanDeleteLinesExecuted);
-
-            // ObservableCollection
-            _createdLineIds.CollectionChanged += (s, e) =>
-            {
-                _deleteContourCommand.NotifyCanExecuteChanged();
-            };
-
         }
         #endregion
         #region Properties for Command
@@ -157,10 +106,13 @@ namespace Void_Profile_Editor.ViewModels
         // Method Execute for SelectFamilyInstanceCommand
         private async Task AsyncSelectSelectFamilyInstance()
         {
+            _resultSelectInstanceUseCase=null;
+            _resultCreateContourUseCase=null;
             var result = await _selectInstanceUseCase.RunAsync();
             if (result.IsSuccess)
-                _resultSelectInstanceUseCase=result.Value;
-            else TaskDialog.Show("Error", $"Error:{result.Error}");
+                _resultSelectInstanceUseCase = result.Value;
+            else 
+                _revitMsaageService.ShowMessage("Error", $"Error:{result.Error}");
         }
         #endregion
         #region Method Execute for CreateContourCommand
@@ -173,13 +125,14 @@ namespace Void_Profile_Editor.ViewModels
         {
             var result = _createContourUserCase.CreateContour(_resultSelectInstanceUseCase);
             if (result.IsFailure)
-                TaskDialog.Show("Error", $"Error:{result.Error}");
+                _revitMsaageService.ShowMessage("Ошибка", $"Error:{result.Error}");
             else
-                _resultCreateContourUseCase=result.Value;
-        }        
+                _resultCreateContourUseCase = result.Value;
+        }
         #endregion
         #region CanExecute for CreateContourCommand
-        private bool CanCreateContourCommandExecute() => Instance != null;
+        private bool CanCreateContourCommandExecute() =>
+            _resultSelectInstanceUseCase != null;
         #endregion
         #region Method Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLinesExecute()
@@ -187,150 +140,31 @@ namespace Void_Profile_Editor.ViewModels
             await _revitTask.Run(app => CreateCuttingLinesExecute());
         }
         private bool CanCreateCuttingLinesExecuted() =>
-            Instance != null && PressureContour != null && ContourHalfH0 != null;
+            _resultSelectInstanceUseCase != null && _resultCreateContourUseCase != null;
         private void CreateCuttingLinesExecute()
         {
-            try
-            {
-                // указываем первую точку для создания секущей линии 
-                _selectionService.PickPoint()
-                    // обнуляем координату Z у точки 
-                    .Bind((point) =>
-                    {
-                        return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                    })
-                    // строим первую секущую линию
-                    .Bind((point) =>
-                    {
-                        if (_contourHalfH0 == null)
-                            return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
-                        _cuttingLines = new Line[2];
-                        _cuttingLines[0] = Line.CreateBound(point, _contourHalfH0.Center);
-                        return CSharpFunctionalExtensions.Result.Success();
-                    })
-                    // test method
-                    .Bind(() =>
-                    {
-                        using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
-                        {
-                            tr.Start();
-                            if (_cuttingLines == null)
-                                tr.RollBack();
-                            else
-                                _drawLineService.DrawLine(_cuttingLines[0], tr);
-                            tr.Commit();
-                        }
-                        return CSharpFunctionalExtensions.Result.Success();
-                    })
-                    // повторяем, строим вторую секущую линию
-                    .Bind(() => _selectionService.PickPoint())
-                    .Bind((point) =>
-                    {
-                        return CSharpFunctionalExtensions.Result.Success<XYZ>(new XYZ(point.X, point.Y, 0));
-                    })
-                    .Bind((point) =>
-                    {
-                        _cuttingLines[1] = Line.CreateBound(point, _contourHalfH0.Center);
-                        return CSharpFunctionalExtensions.Result.Success();
-                    })
-                    // test method
-                    .Bind(() =>
-                    {
-                        using (Transaction tr = new Transaction(_document, "Draw Cutting Line"))
-                        {
-                            tr.Start();
-                            if (_cuttingLines == null)
-                                tr.RollBack();
-                            else
-                                _drawLineService.DrawLine(_cuttingLines[1], tr);
-                            tr.Commit();
-                        }
-                        return CSharpFunctionalExtensions.Result.Success();
-                    })
-                    // ищем точки пересечения секущих линий с контуром 0.5H0
-                    .Bind(() => FindIntersection())
-                    // упорядочиваем _intersectionPoints
-                    .Tap(() =>
-                    {
-                        var orderedPoints = _intersectionPoints
-                            .OrderBy(p => p.SideName)
-                            .ThenBy(p => p.Point.DistanceTo(_contourHalfH0.GetLine(p.SideName).GetEndPoint(0)))
-                            .ToArray();
-                        _intersectionPoints = orderedPoints;
-                    })
-                    // вычисляем параметры
-                    .Bind(() => _geometryService.CalculateParameters(_contourHalfH0, _intersectionPoints, _pressureContour))
-                    // сохраняем параметры
-                    .Bind(() => _pressureCounturInformationService.UpdateParameters(_document, _instance, _pressureContour.ContourParameters));
-            }
-            catch (Exception ex)
-            {
-                TaskDialog.Show("Error", $"Error:{ex.Message}");
-            }
+            var result = _createCuttingLinesUserCase.CreateCuttingLines(
+                _resultCreateContourUseCase.ContourHalfH0,
+                _resultSelectInstanceUseCase.PressureContour);
+            if (result.IsFailure)
+                _revitMsaageService.ShowMessage("Ошибка", result.Error);
         }
-        private CSharpFunctionalExtensions.Result FindIntersection()
-        {
-            if (_contourHalfH0 == null)
-                return CSharpFunctionalExtensions.Result.Failure("Контур 0,5H0 не создан");
-            if (_cuttingLines == null)
-                return CSharpFunctionalExtensions.Result.Failure("Секущие линии не созданы");
-            _intersectionPoints = new IntersectionPoint[2];
-            var result = _geometryService.LineWithContourIntersection(_cuttingLines, _contourHalfH0);
-            if (result.IsSuccess)
-                _intersectionPoints = result.Value;
-            return CSharpFunctionalExtensions.Result.Success();
-        }
+        
         #endregion
         #region Method Execute for Delete Contour Line Command
         private async Task AsyncDeleteLinesExecute()
         {
-            await _revitTask.Run(app => DeleteLinesExecute(CreatedLineIds));
+            await _revitTask.Run(app => DeleteLinesExecute());
         }
-        public CSharpFunctionalExtensions.Result DeleteLinesExecute(ObservableCollection<ElementId> lineIds)
+        public void DeleteLinesExecute()
         {
-            // Проверка списка
-            if (lineIds == null || lineIds.Count == 0)
-                return CSharpFunctionalExtensions.Result.Success();
-
-            // Проверка документа
-            if (_document == null)
-                return CSharpFunctionalExtensions.Result.Failure("Документ не инициализирован");
-
-            try
-            {
-                using (Transaction tr = new Transaction(_document, "Удаление линий"))
-                {
-                    tr.Start();
-
-                    // Фильтруем только валидные элементы
-                    var validIds = lineIds
-                        .Where(id => id != null && _document.GetElement(id) != null)
-                        .ToList();
-
-                    if (validIds.Count == 0)
-                    {
-                        tr.RollBack();
-                        return CSharpFunctionalExtensions.Result.Success();
-                    }
-
-                    // Удаляем элементы
-                    _document.Delete(validIds);
-
-                    tr.Commit();
-
-                    lineIds.Clear();
-
-                    return CSharpFunctionalExtensions.Result.Success();
-                }
-            }
-            catch (Exception ex)
-            {
-                return CSharpFunctionalExtensions.Result.Failure($"Ошибка при удалении линий: {ex.Message}");
-            }
+            var result = _deleteContuorLinesUserCases.DeleteLines(_resultCreateContourUseCase.LinesIdsForDelete);
+            if (result.IsFailure)            
+                _revitMsaageService.ShowMessage("Ошибка", result.Error);            
         }
         #endregion
         #region Can Executed Delete Contour Lines Command
-        private bool CanDeleteLinesExecuted() => CreatedLineIds.Count > 0;
+        private bool CanDeleteLinesExecuted() => _resultCreateContourUseCase == null;
         #endregion
     }
 }

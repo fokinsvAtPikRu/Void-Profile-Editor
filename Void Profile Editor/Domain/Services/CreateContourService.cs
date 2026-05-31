@@ -11,9 +11,9 @@ namespace Void_Profile_Editor.Domain.Services
     public class CreateContourService :ICreateContourService
     {        
         private IGeometryService _geometryService;
-        private IDrawLineService _drawLineService;
+        private IRevitLineService _drawLineService;
         
-        public CreateContourService(IGeometryService geometryService, IDrawLineService drawLineService)         {
+        public CreateContourService(IGeometryService geometryService, IRevitLineService drawLineService)         {
             
             _geometryService = geometryService;
             _drawLineService=drawLineService;

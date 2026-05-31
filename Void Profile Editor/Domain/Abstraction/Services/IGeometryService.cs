@@ -6,6 +6,6 @@ namespace Void_Profile_Editor.Domain.Abstraction.Services
     {
         Point3DDomain RotatePointAroundAxis(Point3DDomain point, Point3DDomain center, Point3DDomain axis, double angle);
         CSharpFunctionalExtensions.Result<IntersectionPoint[]> LineWithContourIntersection(DetailLineDomain[] lines, Contour contour);
-        void CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour);
+        CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour);
     }
 }

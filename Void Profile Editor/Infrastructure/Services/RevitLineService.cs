@@ -9,10 +9,10 @@ using Void_Profile_Editor.Infrastructure.Adapters;
 
 namespace Void_Profile_Editor.Infrastructure.Services
 {
-    public class DrawLineService : IDrawLineService
+    public class RevitLineService : IRevitLineService
     {
         private Document _document;
-        public DrawLineService(Document document)
+        public RevitLineService(Document document)
         {
             _document = document;
         }
@@ -59,42 +59,40 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 .FirstOrDefault(gs => gs.Name == styleName);
         }
 
-        public CSharpFunctionalExtensions.Result DeleteLines(
-                ObservableCollection<ElementId> lineIds,
-                Transaction transaction = null)
+        public CSharpFunctionalExtensions.Result DeleteLines(List<string> lineIdsDomain)
         {
-            // Проверка транзакции
-            if (transaction == null)
-                return CSharpFunctionalExtensions.Result.Failure("Метод может быть вызван только внутри транзакции");
-
-            // Проверка списка
-            if (lineIds == null || lineIds.Count == 0)
-                return CSharpFunctionalExtensions.Result.Success(); // Нечего удалять - считаем успехом
-
-            // Проверка документа
-            if (_document == null)
-                return CSharpFunctionalExtensions.Result.Failure("Документ не инициализирован");
-
-            try
+            if (lineIdsDomain == null)
+                return CSharpFunctionalExtensions.Result.Failure("Список удаляемых линий не создан");
+            if (lineIdsDomain.Count == 0)
+                return CSharpFunctionalExtensions.Result.Failure("Список линий пустой");
+            List<ElementId> listElementIds = lineIdsDomain
+                .Select(idDomain=>idDomain.ToRevitId())
+                .ToList();
+            using (Transaction tr = new Transaction(_document, "Удаление линий контура 6H0"))
             {
-                // Фильтруем только валидные элементы (которые еще существуют в документе)
-                var validIds = lineIds
-                    .Where(id => id != null && id.IntegerValue != -1 && _document.GetElement(id) != null)
-                    .ToList();
+                tr.Start();
+                try
+                {
+                    // Фильтруем только валидные элементы (которые еще существуют в документе)
+                    var validIds = listElementIds
+                        .Where(id => id != null && id.IntegerValue != -1 && _document.GetElement(id) != null)
+                        .ToList();
 
-                if (validIds.Count == 0)
-                    return CSharpFunctionalExtensions.Result.Success(); // Все элементы уже удалены
+                    if (validIds.Count == 0)
+                        return CSharpFunctionalExtensions.Result.Success(); // Все элементы уже удалены
 
-                // Удаляем элементы
-                _document.Delete(validIds);
-                lineIds.Clear();
+                    // Удаляем элементы
+                    _document.Delete(validIds);                    
 
-                return CSharpFunctionalExtensions.Result.Success();
+                    return CSharpFunctionalExtensions.Result.Success();
+                }
+                catch (Exception ex)
+                {
+                    return CSharpFunctionalExtensions.Result.Failure($"Ошибка при удалении линий: {ex.Message}");
+                }
+                tr.Commit();
             }
-            catch (Exception ex)
-            {
-                return CSharpFunctionalExtensions.Result.Failure($"Ошибка при удалении линий: {ex.Message}");
-            }
+            return CSharpFunctionalExtensions.Result.Success(); 
         }
     }
 }

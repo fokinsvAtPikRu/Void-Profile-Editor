@@ -1,33 +1,33 @@
 ﻿using CSharpFunctionalExtensions;
 using System.Threading.Tasks;
 using Void_Profile_Editor.Infrastructure.Abstraction;
-using Void_Profile_Editor.UseCases.Abstraction;
-using Void_Profile_Editor.UseCases.Results;
+using Void_Profile_Editor.UserCases.Abstraction;
+using Void_Profile_Editor.UserCases.Results;
 
-namespace Void_Profile_Editor.UseCases.Cases
+namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class SelectInstanceUseCase : ISelectInstanceUseCase
+    public class SelectInstanceUserCase : ISelectInstanceUserCase
     {
         IRevitSelectionServices _revitSelectionService;
 
-        public SelectInstanceUseCase(IRevitSelectionServices revitSelectionService)
+        public SelectInstanceUserCase(IRevitSelectionServices revitSelectionService)
         {
             _revitSelectionService = revitSelectionService;
         }
-        public async Task<Result<ResultSelectInstanceUseCase>> RunAsync()
+        public async Task<Result<ResultSelectInstanceUserCase>> RunAsync()
         {
 
             var result = await _revitSelectionService.PickFamilyInstanceAsync("Выберете семейство");
             if (result.IsSuccess)
             {
-                return new ResultSelectInstanceUseCase
+                return new ResultSelectInstanceUserCase
                 {
                     PressureContour = result.Value
                 };
             }
             else
             {
-                return Result.Failure<ResultSelectInstanceUseCase>("Объект не выбран");
+                return Result.Failure<ResultSelectInstanceUserCase>("Объект не выбран");
             }
         }
     }

@@ -1,38 +1,36 @@
-﻿using Autodesk.Revit.DB;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Domain.Services;
-using Void_Profile_Editor.Infrastructure.Adapters;
-using Void_Profile_Editor.UseCases.Abstraction;
-using Void_Profile_Editor.UseCases.Results;
+using Void_Profile_Editor.UserCases.Abstraction;
+using Void_Profile_Editor.UserCases.Results;
 
-namespace Void_Profile_Editor.UseCases.Cases
+namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class CreateCountourUseCase : ICreateContourUserCase
+    public class CreateCountourUserCase : ICreateContourUserCase
     {
         private readonly CreateContourService _createContourService;
 
-        public CreateCountourUseCase(CreateContourService createContourService)
+        public CreateCountourUserCase(CreateContourService createContourService)
         {
             _createContourService = createContourService;
         }
-        public Result<ResultCreateContourUseCase> CreateContour(ResultSelectInstanceUseCase resultSelectInstanceUseCase)
+        public Result<ResultCreateContourUserCase> CreateContour(ResultSelectInstanceUserCase resultSelectInstanceUseCase)
         {
             if (resultSelectInstanceUseCase == null)
-                return Result.Failure<ResultCreateContourUseCase>("ResultSelectInstanceUseCase resultSelectInstanceUseCase == null");
+                return Result.Failure<ResultCreateContourUserCase>("ResultSelectInstanceUseCase resultSelectInstanceUseCase == null");
             if (resultSelectInstanceUseCase.PressureContour == null)
-                return Result.Failure<ResultCreateContourUseCase>("Контур продавливания не создан");
+                return Result.Failure<ResultCreateContourUserCase>("Контур продавливания не создан");
             PressureContour pressureContour = resultSelectInstanceUseCase.PressureContour;
             var resultCreate6H0Contour = Create6H0Contour(pressureContour);
             if (resultCreate6H0Contour.IsFailure)
-                return Result.Failure<ResultCreateContourUseCase>(resultCreate6H0Contour.Error);
+                return Result.Failure<ResultCreateContourUserCase>(resultCreate6H0Contour.Error);
             var resutDrawContour = _createContourService.DrawContour(resultCreate6H0Contour.Value);
             if (resutDrawContour.IsFailure)
-                return Result.Failure<ResultCreateContourUseCase>(resutDrawContour.Error);
+                return Result.Failure<ResultCreateContourUserCase>(resutDrawContour.Error);
             var resultCreateHalfH0Contour = CreateHalfH0Contour(pressureContour);
             if (resultCreateHalfH0Contour.IsFailure)
-                return Result.Failure<ResultCreateContourUseCase>(resultCreateHalfH0Contour.Error);
-            return new ResultCreateContourUseCase
+                return Result.Failure<ResultCreateContourUserCase>(resultCreateHalfH0Contour.Error);
+            return new ResultCreateContourUserCase
             {
                 Contour6H0 = resultCreate6H0Contour.Value,
                 ContourHalfH0 = resultCreateHalfH0Contour.Value,

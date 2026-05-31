@@ -1,32 +1,30 @@
-﻿
-using Autodesk.Revit.DB;
-using CSharpFunctionalExtensions;
-using System;
+﻿using CSharpFunctionalExtensions;
 using System.Linq;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.UserCases.Abstraction;
 
-namespace Void_Profile_Editor.UseCases.Cases
+namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class CreateCuttingLinesUseCase
+    public class CreateCuttingLinesUserCase : ICreateCuttingLinesUserCase
     {
         private readonly ISelectionService _selectionService;
-        private readonly IDrawLineService _drawLineService;
+        private readonly IRevitLineService _drawLineService;
         private readonly IGeometryService _geometryService;
-        private readonly IPressureCounturInformationService _pressureCounturInformationService;
-        public CreateCuttingLinesUseCase(
+        private readonly IRevitUpdateParametersService _pressureCounturInformationService;
+        public CreateCuttingLinesUserCase(
             ISelectionService selectionService,
-            IDrawLineService drawLineService,
+            IRevitLineService drawLineService,
             IGeometryService geometryService,
-            IPressureCounturInformationService pressureCounturInformationService)
+            IRevitUpdateParametersService pressureCounturInformationService)
         {
             _selectionService = selectionService;
             _drawLineService = drawLineService;
             _geometryService = geometryService;
             _pressureCounturInformationService = pressureCounturInformationService;
         }
-        private Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour)
+        public Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour) 
         {
             if (contourHalfH0 == null)
                 return Result.Failure("Контур 0.5h0 не создан");
@@ -45,6 +43,7 @@ namespace Void_Profile_Editor.UseCases.Cases
                     0);
                 cuttingLines[i] = new DetailLineDomain(point, contourHalfH0.Center);
             }
+            _drawLineService.DrawLines("Секущие линии для контура продавливания", cuttingLines.ToList());
             var resutIntersectionPoints = FindIntersection(contourHalfH0, cuttingLines);
             if (resutIntersectionPoints.IsFailure)
                 return Result.Failure(resutIntersectionPoints.Error);

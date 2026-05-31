@@ -54,9 +54,18 @@ namespace Void_Profile_Editor.Domain.Services
             return results;
         }
 
-        public void CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
+        public CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)
         {
-            var parameters = pressureContour.ContourParameters;            
+            if (contourHalfH0 == null)
+                return CSharpFunctionalExtensions.Result.Failure("contourHalfH0 == null");
+            if (points == null)
+                return CSharpFunctionalExtensions.Result.Failure("Точки пересечения с контуром null");
+            if (pressureContour == null)
+                return CSharpFunctionalExtensions.Result.Failure("pressureContour == null");
+            if (pressureContour.ContourParameters == null)
+                return CSharpFunctionalExtensions.Result.Failure("pressureContour.ContourParameters == null");
+
+            var parameters = pressureContour.ContourParameters;
 
             parameters.IntParameters["Вкл редактирование контура"] = 1;
             bool firstPointIsFounded = false;            
