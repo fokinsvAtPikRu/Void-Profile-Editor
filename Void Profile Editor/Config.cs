@@ -32,6 +32,7 @@ namespace Void_Profile_Editor
             services.AddSingleton<ICreateContourUserCase, CreateCountourUserCase>();
             services.AddSingleton<ICreateCuttingLinesUserCase, CreateCuttingLinesUserCase>();
             services.AddSingleton<ISelectInstanceUserCase, SelectInstanceUserCase>();
+            services.AddSingleton<IDeleteContuorLinesUserCases, DeleteContuorLinesUserCases>();
 
             // View Model
             services.AddSingleton<MainWindowViewModel>();

@@ -21,6 +21,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
         {
             try
             {
+
                 Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new PushingEndWallSelectionFilter(), "Выберите элемент");
                 FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
                 return element;

@@ -1,4 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
+using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.UserCases.Abstraction;
@@ -8,9 +9,9 @@ namespace Void_Profile_Editor.UserCases.Cases
 {
     public class CreateCountourUserCase : ICreateContourUserCase
     {
-        private readonly CreateContourService _createContourService;
+        private readonly ICreateContourService _createContourService;
 
-        public CreateCountourUserCase(CreateContourService createContourService)
+        public CreateCountourUserCase(ICreateContourService createContourService)
         {
             _createContourService = createContourService;
         }

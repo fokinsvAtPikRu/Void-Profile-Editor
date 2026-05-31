@@ -1,10 +1,11 @@
 ﻿using CSharpFunctionalExtensions;
 using System.Collections.Generic;
 using Void_Profile_Editor.Infrastructure.Abstraction;
+using Void_Profile_Editor.UserCases.Abstraction;
 
 namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class DeleteContuorLinesUserCases
+    public class DeleteContuorLinesUserCases : IDeleteContuorLinesUserCases
     {
         private readonly IRevitLineService _revitLineService;
         public DeleteContuorLinesUserCases(

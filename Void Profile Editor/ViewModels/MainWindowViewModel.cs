@@ -10,7 +10,7 @@ namespace Void_Profile_Editor.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        #region UseCases
+        #region UserCases
         private readonly ISelectInstanceUserCase _selectInstanceUseCase;
         private readonly ICreateContourUserCase _createContourUserCase;
         private readonly ICreateCuttingLinesUserCase _createCuttingLinesUserCase;
@@ -42,6 +42,8 @@ namespace Void_Profile_Editor.ViewModels
                 if (SetProperty(ref _resultSelectInstanceUseCase, value))
                 {
                     _createContourCommand.NotifyCanExecuteChanged();
+                    _createCutingLinesCommand.NotifyCanExecuteChanged();
+                    _deleteContourCommand.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -53,6 +55,7 @@ namespace Void_Profile_Editor.ViewModels
                 if (SetProperty(ref _resultCreateContourUseCase, value))
                 {
                     _createCutingLinesCommand.NotifyCanExecuteChanged();
+                    _deleteContourCommand.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -106,11 +109,11 @@ namespace Void_Profile_Editor.ViewModels
         // Method Execute for SelectFamilyInstanceCommand
         private async Task AsyncSelectSelectFamilyInstance()
         {
-            _resultSelectInstanceUseCase=null;
-            _resultCreateContourUseCase=null;
+            ResultSelectInstanceUseCase=null;
+            ResultCreateContourUseCase=null;
             var result = await _selectInstanceUseCase.RunAsync();
             if (result.IsSuccess)
-                _resultSelectInstanceUseCase = result.Value;
+                ResultSelectInstanceUseCase = result.Value;
             else 
                 _revitMsaageService.ShowMessage("Error", $"Error:{result.Error}");
         }
@@ -123,7 +126,7 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateContour()
         {
-            var result = _createContourUserCase.CreateContour(_resultSelectInstanceUseCase);
+            var result = _createContourUserCase.CreateContour(ResultSelectInstanceUseCase);
             if (result.IsFailure)
                 _revitMsaageService.ShowMessage("Ошибка", $"Error:{result.Error}");
             else
@@ -132,7 +135,7 @@ namespace Void_Profile_Editor.ViewModels
         #endregion
         #region CanExecute for CreateContourCommand
         private bool CanCreateContourCommandExecute() =>
-            _resultSelectInstanceUseCase != null;
+            ResultSelectInstanceUseCase != null;
         #endregion
         #region Method Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLinesExecute()
@@ -140,12 +143,12 @@ namespace Void_Profile_Editor.ViewModels
             await _revitTask.Run(app => CreateCuttingLinesExecute());
         }
         private bool CanCreateCuttingLinesExecuted() =>
-            _resultSelectInstanceUseCase != null && _resultCreateContourUseCase != null;
+            ResultSelectInstanceUseCase != null && ResultCreateContourUseCase != null;
         private void CreateCuttingLinesExecute()
         {
             var result = _createCuttingLinesUserCase.CreateCuttingLines(
-                _resultCreateContourUseCase.ContourHalfH0,
-                _resultSelectInstanceUseCase.PressureContour);
+                ResultCreateContourUseCase.ContourHalfH0,
+                ResultSelectInstanceUseCase.PressureContour);
             if (result.IsFailure)
                 _revitMsaageService.ShowMessage("Ошибка", result.Error);
         }
@@ -164,7 +167,7 @@ namespace Void_Profile_Editor.ViewModels
         }
         #endregion
         #region Can Executed Delete Contour Lines Command
-        private bool CanDeleteLinesExecuted() => _resultCreateContourUseCase == null;
+        private bool CanDeleteLinesExecuted() => ResultCreateContourUseCase != null;
         #endregion
     }
 }

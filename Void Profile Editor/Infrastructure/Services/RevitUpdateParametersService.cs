@@ -8,7 +8,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
 {
     public class RevitUpdateParametersService : IRevitUpdateParametersService
     {
-        private Document _document;
+        private readonly Document _document;
         private IGeometryService _geometryService;
         public RevitUpdateParametersService(
             Document document,

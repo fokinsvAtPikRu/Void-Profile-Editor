@@ -17,6 +17,7 @@ namespace Void_Profile_Editor.Domain.Abstraction.Services
             double thickness,
             double offset,
             bool isMirrored);
+        CSharpFunctionalExtensions.Result<List<string>> DrawContour(Contour contour);
 
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
@@ -34,6 +33,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
 
             using (Transaction tr = new Transaction(_document, trMessage))
             {
+                tr.Start();
                 foreach (var line in linesDomain)
                 {
                     DetailLine revitlLine = _document.Create.NewDetailCurve(view, line.ToRevit()) as DetailLine;
@@ -43,6 +43,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
                         createdLinesIdsDomain.Add(revitlLine.Id.ToDomain());
                     }
                 }
+                tr.Commit();
             }
             if (linesDomain.Count == createdLinesIdsDomain.Count)
                 return createdLinesIdsDomain;
