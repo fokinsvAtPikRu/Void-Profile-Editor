@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.UserCases.Abstraction;
 using Void_Profile_Editor.UserCases.Results;
-using Void_Profile_Editor.UserCases.Abstraction;
 
 namespace Void_Profile_Editor.ViewModels
 {
