@@ -83,15 +83,14 @@ namespace Void_Profile_Editor.Infrastructure.Services
                         return CSharpFunctionalExtensions.Result.Success(); // Все элементы уже удалены
 
                     // Удаляем элементы
-                    _document.Delete(validIds);                    
-
-                    return CSharpFunctionalExtensions.Result.Success();
+                    _document.Delete(validIds);
                 }
                 catch (Exception ex)
                 {
                     return CSharpFunctionalExtensions.Result.Failure($"Ошибка при удалении линий: {ex.Message}");
                 }
                 tr.Commit();
+                return CSharpFunctionalExtensions.Result.Success();
             }
             return CSharpFunctionalExtensions.Result.Success(); 
         }

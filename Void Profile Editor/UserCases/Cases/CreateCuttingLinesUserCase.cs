@@ -54,7 +54,7 @@ namespace Void_Profile_Editor.UserCases.Cases
             _geometryService.CalculateParameters(contourHalfH0, orderedPoints, pressureContour);
             var resultUpdateParameters = _pressureCounturInformationService.UpdateParameters(pressureContour);
             if (resultUpdateParameters.IsFailure)
-                return Result.Failure("не удалось обновить параметры");
+                return Result.Failure(resultUpdateParameters.Error);
             return Result.Success();           
         }
         private Result<IntersectionPoint[]> FindIntersection(Contour contourHalfH0, DetailLineDomain[] cuttingLines)

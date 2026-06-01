@@ -18,11 +18,11 @@ namespace Void_Profile_Editor.Infrastructure.Services
             _geometryService = geometryService;
         }
 
-        
+
 
         public CSharpFunctionalExtensions.Result UpdateParameters(PressureContour pressureContour)
         {
-            
+
             if (pressureContour == null)
                 return CSharpFunctionalExtensions.Result.Failure("PressureContour == null");
             if (pressureContour.ContourParameters == null)
@@ -38,10 +38,6 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 {
                     return CSharpFunctionalExtensions.Result.Failure($"Не найден параметр {key} в экземпляре семейства");
                 }
-                if (parameter.IsReadOnly)
-                {
-                    return CSharpFunctionalExtensions.Result.Failure($"Параметр {key} доступен только для чтения");
-                }
             }
             foreach (var key in parameters.IntParameters.Keys)
             {
@@ -50,27 +46,25 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 {
                     return CSharpFunctionalExtensions.Result.Failure($"Не найден параметр {key} в экземпляре семейства");
                 }
-                if (parameter.IsReadOnly)
-                {
-                    return CSharpFunctionalExtensions.Result.Failure($"Параметр {key} доступен только для чтения");
-                }
             }
 
-            using (Transaction trans = new Transaction(_document, "Изменение параметров контура продавливания"))
+            using (Transaction tr = new Transaction(_document, "Изменение параметров контура продавливания"))
             {
-                trans.Start();
+                tr.Start();
                 Parameter parameter;
                 foreach (var key in parameters.DoubleParameters.Keys)
                 {
                     parameter = instance.LookupParameter(key);
-                    parameter.Set(parameters.DoubleParameters[key]);
+                    if (!parameter.IsReadOnly)
+                        parameter.Set(parameters.DoubleParameters[key]);
                 }
                 foreach (var key in parameters.IntParameters.Keys)
                 {
                     parameter = instance.LookupParameter(key);
-                    parameter.Set(parameters.IntParameters[key]);
+                    if (!parameter.IsReadOnly)
+                        parameter.Set(parameters.IntParameters[key]);
                 }
-                trans.Commit();
+                tr.Commit();
             }
             return CSharpFunctionalExtensions.Result.Success();
         }
@@ -88,6 +82,6 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 contour.Rotation);
         }
 
-        
+
     }
 }

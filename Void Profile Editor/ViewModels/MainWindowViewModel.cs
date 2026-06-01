@@ -29,17 +29,17 @@ namespace Void_Profile_Editor.ViewModels
         private readonly AsyncRelayCommand _deleteContourCommand;
 
         // Results UserCase
-        private ResultSelectInstanceUserCase _resultSelectInstanceUseCase;
-        private ResultCreateContourUserCase _resultCreateContourUseCase;
+        private ResultSelectInstanceUserCase _resultSelectInstanceUserCase;
+        private ResultCreateContourUserCase _resultCreateContourUserCase;
        
 
         // Observable Properties
-        public ResultSelectInstanceUserCase ResultSelectInstanceUseCase
+        public ResultSelectInstanceUserCase ResultSelectInstance
         {
-            get => _resultSelectInstanceUseCase;
+            get => _resultSelectInstanceUserCase;
             set
             {
-                if (SetProperty(ref _resultSelectInstanceUseCase, value))
+                if (SetProperty(ref _resultSelectInstanceUserCase, value))
                 {
                     _createContourCommand.NotifyCanExecuteChanged();
                     _createCutingLinesCommand.NotifyCanExecuteChanged();
@@ -47,12 +47,12 @@ namespace Void_Profile_Editor.ViewModels
                 }
             }
         }
-        public ResultCreateContourUserCase ResultCreateContourUseCase
+        public ResultCreateContourUserCase ResultCreateContour
         {
-            get => _resultCreateContourUseCase;
+            get => _resultCreateContourUserCase;
             set
             {
-                if (SetProperty(ref _resultCreateContourUseCase, value))
+                if (SetProperty(ref _resultCreateContourUserCase, value))
                 {
                     _createCutingLinesCommand.NotifyCanExecuteChanged();
                     _deleteContourCommand.NotifyCanExecuteChanged();
@@ -79,9 +79,11 @@ namespace Void_Profile_Editor.ViewModels
             _createContourUserCase = createContourUserCase;
             _createCuttingLinesUserCase = createCuttingLinesUserCase;            
             _deleteContuorLinesUserCases = deleteContuorLinesUserCases;
+            // Message Service
+            _revitMsaageService=revitMessageService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
-            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanCreateContourCommandExecute);
+            _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanCreateContourCommandExecuted);
             _createCutingLinesCommand = new AsyncRelayCommand(AsyncCreateCuttingLinesExecute, CanCreateCuttingLinesExecuted);
             _deleteContourCommand = new AsyncRelayCommand(AsyncDeleteLinesExecute, CanDeleteLinesExecuted);
         }
@@ -109,11 +111,11 @@ namespace Void_Profile_Editor.ViewModels
         // Method Execute for SelectFamilyInstanceCommand
         private async Task AsyncSelectSelectFamilyInstance()
         {
-            ResultSelectInstanceUseCase=null;
-            ResultCreateContourUseCase=null;
+            ResultSelectInstance=null;
+            ResultCreateContour=null;
             var result = await _selectInstanceUseCase.RunAsync();
             if (result.IsSuccess)
-                ResultSelectInstanceUseCase = result.Value;
+                ResultSelectInstance = result.Value;
             else 
                 _revitMsaageService.ShowMessage("Error", $"Error:{result.Error}");
         }
@@ -126,16 +128,16 @@ namespace Void_Profile_Editor.ViewModels
         }
         private void CreateContour()
         {
-            var result = _createContourUserCase.CreateContour(ResultSelectInstanceUseCase);
+            var result = _createContourUserCase.CreateContour(ResultSelectInstance);
             if (result.IsFailure)
                 _revitMsaageService.ShowMessage("Ошибка", $"Error:{result.Error}");
             else
-                _resultCreateContourUseCase = result.Value;
+                ResultCreateContour = result.Value;
         }
         #endregion
         #region CanExecute for CreateContourCommand
-        private bool CanCreateContourCommandExecute() =>
-            ResultSelectInstanceUseCase != null;
+        private bool CanCreateContourCommandExecuted() =>
+            ResultSelectInstance != null;
         #endregion
         #region Method Execute for CreateCuttingLinesCommand
         private async Task AsyncCreateCuttingLinesExecute()
@@ -143,12 +145,12 @@ namespace Void_Profile_Editor.ViewModels
             await _revitTask.Run(app => CreateCuttingLinesExecute());
         }
         private bool CanCreateCuttingLinesExecuted() =>
-            ResultSelectInstanceUseCase != null && ResultCreateContourUseCase != null;
+            ResultSelectInstance != null && ResultCreateContour != null;
         private void CreateCuttingLinesExecute()
         {
             var result = _createCuttingLinesUserCase.CreateCuttingLines(
-                ResultCreateContourUseCase.ContourHalfH0,
-                ResultSelectInstanceUseCase.PressureContour);
+                ResultCreateContour.ContourHalfH0,
+                ResultSelectInstance.PressureContour);
             if (result.IsFailure)
                 _revitMsaageService.ShowMessage("Ошибка", result.Error);
         }
@@ -161,13 +163,18 @@ namespace Void_Profile_Editor.ViewModels
         }
         public void DeleteLinesExecute()
         {
-            var result = _deleteContuorLinesUserCases.DeleteLines(_resultCreateContourUseCase.LinesIdsForDelete);
+            var result = _deleteContuorLinesUserCases.DeleteLines(ResultCreateContour.LinesIdsForDelete);
             if (result.IsFailure)            
-                _revitMsaageService.ShowMessage("Ошибка", result.Error);            
+                _revitMsaageService.ShowMessage("Ошибка", result.Error);
+            else
+            {
+                ResultCreateContour = null;
+                ResultSelectInstance = null;
+            }
         }
         #endregion
         #region Can Executed Delete Contour Lines Command
-        private bool CanDeleteLinesExecuted() => ResultCreateContourUseCase != null;
+        private bool CanDeleteLinesExecuted() => ResultCreateContour != null;
         #endregion
     }
 }
