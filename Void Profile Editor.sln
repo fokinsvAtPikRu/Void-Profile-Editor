@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Void Profile Editor", "Void
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMenu", "MyMenu\MyMenu.csproj", "{E67DBCC9-375B-4DAA-A16C-DA2B44829B5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoidProfileEditorTests", "VoidProfileEditorTests\VoidProfileEditorTests.csproj", "{100CCD61-6AFB-4373-AFC8-CC2C68096579}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{E67DBCC9-375B-4DAA-A16C-DA2B44829B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E67DBCC9-375B-4DAA-A16C-DA2B44829B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E67DBCC9-375B-4DAA-A16C-DA2B44829B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{100CCD61-6AFB-4373-AFC8-CC2C68096579}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{100CCD61-6AFB-4373-AFC8-CC2C68096579}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{100CCD61-6AFB-4373-AFC8-CC2C68096579}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{100CCD61-6AFB-4373-AFC8-CC2C68096579}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
