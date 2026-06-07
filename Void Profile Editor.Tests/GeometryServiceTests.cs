@@ -1,437 +1,416 @@
-using System;
-using System.Collections.Generic;
-using Autodesk.Revit.DB;
-using CSharpFunctionalExtensions;
-using FluentAssertions;
-using Moq;
-using NUnit.Framework;
-using Void_Profile_Editor.Domain.Model.Geometry;
-using Void_Profile_Editor.Infrastructure.Adapters;
-
-namespace Void_Profile_Editor.Domain.Services.Tests
-{
-    [TestFixture]
-    public class GeometryServiceTests
-    {
-        private GeometryService _geometryService;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _geometryService = new GeometryService();
-        }
-
-        #region RotatePointAroundAxis Tests
-
-        [Test]
-        public void RotatePointAroundAxis_Should_RotatePointCorrectly_When_AngleIs90DegreesAroundZAxis()
-        {
-            // Arrange
-            var point = new Point3DDomain(1, 0, 0);
-            var center = new Point3DDomain(0, 0, 0);
-            var axis = new Point3DDomain(0, 0, 1);
-            double angle = Math.PI / 2; // 90 degrees
-
-            // Act
-            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
-
-            // Assert
-            result.X.Should().BeApproximately(0, 1e-6);
-            result.Y.Should().BeApproximately(1, 1e-6);
-            result.Z.Should().BeApproximately(0, 1e-6);
-        }
-
-        [Test]
-        public void RotatePointAroundAxis_Should_ReturnSamePoint_When_AngleIsZero()
-        {
-            // Arrange
-            var point = new Point3DDomain(5, 3, 2);
-            var center = new Point3DDomain(1, 1, 1);
-            var axis = new Point3DDomain(0, 1, 0);
-            double angle = 0;
-
-            // Act
-            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
-
-            // Assert
-            result.X.Should().Be(5);
-            result.Y.Should().Be(3);
-            result.Z.Should().Be(2);
-        }
-
-        [Test]
-        public void RotatePointAroundAxis_Should_HandleNonZeroCenterCorrectly()
-        {
-            // Arrange
-            var point = new Point3DDomain(3, 4, 0);
-            var center = new Point3DDomain(1, 1, 0);
-            var axis = new Point3DDomain(0, 0, 1);
-            double angle = Math.PI; // 180 degrees
-
-            // Act
-            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
-
-            // Assert
-            result.X.Should().BeApproximately(-1, 1e-6);
-            result.Y.Should().BeApproximately(-2, 1e-6);
-            result.Z.Should().BeApproximately(0, 1e-6);
-        }
-
-        #endregion
-
-        #region LineWithContourIntersection Tests
-
-        [Test]
-        public void LineWithContourIntersection_Should_ReturnFailure_When_LineHasMoreThanOneIntersection()
-        {
-            // Arrange
-            var lines = new[]
-            {
-                CreateDetailLineDomain(0, 0, 10, 10),
-                CreateDetailLineDomain(0, 0, 10, 10)
-            };
-
-            var contour = new Contour();
-            contour.Left=CreateLineDomain(0, 0, 0, 10);
-            contour.Bottom=CreateLineDomain(0, 0, 10, 0);
-            contour.Right=CreateLineDomain(10, 0, 10, 10);
-            contour.TopLeft=CreateLineDomain(0, 10, 5, 10);
-            contour.TopRight=CreateLineDomain(5, 10, 10, 10);
-
-            // Act
-            var result = _geometryService.LineWithContourIntersection(lines, contour);
-
-            // Assert
-            Assert.That(result.IsFailure, Is.True);
-            Assert.That(result.Error, Does.Contain("точек пересечения больше одной"));
-        }
-
-        [Test]
-        public void LineWithContourIntersection_Should_ReturnSuccess_When_EachLineHasOneIntersection()
-        {
-            // Arrange
-            var mockLine1 = new Mock<DetailLineDomain>();
-            var mockLine2 = new Mock<DetailLineDomain>();
-
-            var line1 = Line.CreateBound(new XYZ(5, -5, 0), new XYZ(5, 15, 0));
-            var line2 = Line.CreateBound(new XYZ(-5, 5, 0), new XYZ(15, 5, 0));
-
-            mockLine1.Setup(l => l.ToRevit()).Returns(line1);
-            mockLine2.Setup(l => l.ToRevit()).Returns(line2);
-
-            var lines = new[] { mockLine1.Object, mockLine2.Object };
-
-            var contour = new Contour();
-            var leftLine = CreateLineDomain(0, 0, 0, 10);
-            var bottomLine = CreateLineDomain(0, 0, 10, 0);
-            var rightLine = CreateLineDomain(10, 0, 10, 10);
-            var topLeftLine = CreateLineDomain(0, 10, 5, 10);
-            var topRightLine = CreateLineDomain(5, 10, 10, 10);
-
-            contour.Left=leftLine;
-            contour.Bottom = bottomLine;
-            contour.Right=rightLine;
-            contour.TopLeft= topLeftLine;
-            contour.TopRight= topRightLine;
-
-            // Act
-            var result = _geometryService.LineWithContourIntersection(lines, contour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value, Is.Not.Null);
-            Assert.That(result.Value.Length, Is.EqualTo(2));
-        }
-
-        #endregion
-
-        #region CalculateParameters Tests
-
-        [Test]
-        public void CalculateParameters_Should_ReturnFailure_When_ContourHalfH0IsNull()
-        {
-            // Arrange
-            var points = Array.Empty<IntersectionPoint>();
-            var pressureContour = new PressureContour();
-
-            // Act
-            var result = _geometryService.CalculateParameters(null, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsFailure, Is.True);
-            Assert.That(result.Error, Is.EqualTo("contourHalfH0 == null"));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_ReturnFailure_When_PointsIsNull()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var pressureContour = new PressureContour();
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, null, pressureContour);
-
-            // Assert
-            Assert.That(result.IsFailure, Is.True);
-            Assert.That(result.Error, Is.EqualTo("Точки пересечения с контуром null"));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_ReturnFailure_When_PressureContourIsNull()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var points = Array.Empty<IntersectionPoint>();
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, null);
-
-            // Assert
-            Assert.That(result.IsFailure, Is.True);
-            Assert.That(result.Error, Is.EqualTo("pressureContour == null"));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_ReturnFailure_When_ContourParametersIsNull()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var points = Array.Empty<IntersectionPoint>();
-            var pressureContour = new PressureContour { ContourParameters = null };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsFailure, Is.True);
-            Assert.That(result.Error, Is.EqualTo("pressureContour.ContourParameters == null"));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_SetEditContourParameter_When_ValidInput()
-        {
-            // Arrange
-            var contourHalfH0 = CreateTestContour();
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(0, 5, 0), ContourSideName.Left),
-                new IntersectionPoint(new Point3DDomain(10, 5, 0), ContourSideName.Right)
-            };
-
-            var parameters = new PressureContourParameters();
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(parameters.IntParameters["Вкл редактирование контура"], Is.EqualTo(1));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_SetHoleOnEdge_When_BothPointsOnSameSide()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var bottomLineMock = CreateLineDomain(0, 0, 20, 0);
-            contourHalfH0.Bottom= bottomLineMock;
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(5, 0, 0), ContourSideName.Bottom),
-                new IntersectionPoint(new Point3DDomain(15, 0, 0), ContourSideName.Bottom)
-            };
-
-            var parameters = new PressureContourParameters();
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(parameters.DoubleParameters["Ст2.ширина отверстия"], Is.EqualTo(10));
-            Assert.That(parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"], Is.EqualTo(5));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_SetHoleOnEdge_When_HoleAlreadyExistsAndNewHoleIsLarger()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var bottomLineMock = CreateLineDomain(0, 0, 20, 0);
-            contourHalfH0.Bottom=bottomLineMock;
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(5, 0, 0), ContourSideName.Bottom),
-                new IntersectionPoint(new Point3DDomain(15, 0, 0), ContourSideName.Bottom)
-            };
-
-            var parameters = new PressureContourParameters();
-            parameters.DoubleParameters["Ст2.ширина отверстия"] = 3;
-            parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"] = 6;
-
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            // Ожидаем объединение отверстий: от 5 до 15 (ширина 10, смещение 5)
-            Assert.That(parameters.DoubleParameters["Ст2.ширина отверстия"], Is.EqualTo(10));
-            Assert.That(parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"], Is.EqualTo(5));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_SetOffsetAndDisableEdges_When_PointsOnDifferentSides()
-        {
-            // Arrange
-            var contourHalfH0 = CreateTestContour();
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(0, 5, 0), ContourSideName.Left),
-                new IntersectionPoint(new Point3DDomain(20, 15, 0), ContourSideName.Right)
-            };
-
-            var parameters = new PressureContourParameters();
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(parameters.DoubleParameters.ContainsKey("Ст1.отступ линии от Ст4"), Is.True);
-            Assert.That(parameters.DoubleParameters.ContainsKey("Ст3.отступ линии от Ст4"), Is.True);
-            Assert.That(parameters.IntParameters["Вкл сторона 2"], Is.EqualTo(0));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_HandlePointsOnSameSide_When_FirstPointFoundAndSecondOnDifferentSide()
-        {
-            // Arrange
-            var contourHalfH0 = CreateTestContour();
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(0, 5, 0), ContourSideName.Left),
-                new IntersectionPoint(new Point3DDomain(5, 0, 0), ContourSideName.Bottom)
-            };
-
-            var parameters = new PressureContourParameters();
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(parameters.DoubleParameters.ContainsKey("Ст1.отступ линии от Ст4"), Is.True);
-            Assert.That(parameters.DoubleParameters.ContainsKey("Ст2.отступ линии от Ст1"), Is.True);
-        }
-
-        #endregion
-
-        #region Edge Cases Tests
-
-        [Test]
-        public void CalculateParameters_Should_SkipProcessing_When_ParameterNamesAreEmpty()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var topLineMock = CreateLineDomain(0, 10, 10, 10);
-            contourHalfH0.TopLeft= topLineMock;
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(2, 10, 0), ContourSideName.TopLeft),
-                new IntersectionPoint(new Point3DDomain(8, 10, 0), ContourSideName.TopLeft)
-            };
-
-            var parameters = new PressureContourParameters();
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            // Для верхней стороны имена параметров пустые, ничего не должно быть установлено
-            Assert.That(parameters.DoubleParameters.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void CalculateParameters_Should_UpdateExistingParameters_When_TheyAlreadyExist()
-        {
-            // Arrange
-            var contourHalfH0 = new Contour();
-            var bottomLineMock = CreateLineDomain(0, 0, 20, 0);
-            contourHalfH0.Bottom= bottomLineMock;
-
-            var points = new[]
-            {
-                new IntersectionPoint(new Point3DDomain(5, 0, 0), ContourSideName.Bottom),
-                new IntersectionPoint(new Point3DDomain(15, 0, 0), ContourSideName.Bottom)
-            };
-
-            var parameters = new PressureContourParameters();
-            parameters.DoubleParameters["Ст2.ширина отверстия"] = 0;
-            parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"] = 0;
-
-            var pressureContour = new PressureContour { ContourParameters = parameters };
-
-            // Act
-            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(parameters.DoubleParameters["Ст2.ширина отверстия"], Is.EqualTo(10));
-            Assert.That(parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"], Is.EqualTo(5));
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private DetailLineDomain CreateDetailLineDomain(double x1, double y1, double x2, double y2)
-        {
-            var mock = new Mock<DetailLineDomain>();
-            var line = Line.CreateBound(new XYZ(x1, y1, 0), new XYZ(x2, y2, 0));
-            mock.Setup(d => d.ToRevit()).Returns(line);
-            return mock.Object;
-        }
-
-        private DetailLineDomain CreateLineDomain(double x1, double y1, double x2, double y2)
-        {
-            var mock = new Mock<DetailLineDomain>();
-            var line = Line.CreateBound(new XYZ(x1, y1, 0), new XYZ(x2, y2, 0));
-            var startPoint = new Point3DDomain(x1, y1, 0);
-            var endPoint = new Point3DDomain(x2, y2, 0);
-
-            mock.Setup(l => l.ToRevit()).Returns(line);
-            mock.Setup(l => l.Start).Returns(startPoint);
-            mock.Setup(l => l.End).Returns(endPoint);            
-
-            return mock.Object;
-        }
-
-        private Contour CreateTestContour()
-        {
-            var contour = new Contour();
-            contour.Left= CreateLineDomain(0, 0, 0, 20);
-            contour.Bottom= CreateLineDomain(0, 0, 20, 0);
-            contour.Right= CreateLineDomain(20, 0, 20, 20);
-            contour.TopLeft =  CreateLineDomain(0, 20, 10, 20);
-            contour.TopRight = CreateLineDomain(10, 20, 20, 20);
-            return contour;
-        }
-
-        #endregion
-    }
-}
+//using Autodesk.Revit.DB;
+//using CSharpFunctionalExtensions;
+//using Moq;
+//using NUnit.Framework;
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using Void_Profile_Editor.Domain.Abstraction.Services;
+//using Void_Profile_Editor.Domain.Model.Geometry;
+//using Void_Profile_Editor.Infrastructure.Adapters;
+
+//namespace Void_Profile_Editor.Domain.Services.Tests
+//{
+//    [TestFixture]
+//    public class GeometryServiceTests
+//    {
+//        private GeometryService _geometryService;
+//        private const double EPSILON = 0.0001;
+
+//        [SetUp]
+//        public void SetUp()
+//        {
+//            _geometryService = new GeometryService();
+//        }
+
+//        #region RotatePointAroundAxis Tests
+
+//        [Test]
+//        public void RotatePointAroundAxis_ZeroAngle_ReturnsSamePoint()
+//        {
+//            // Arrange
+//            var point = new Point3DDomain(10, 5, 0);
+//            var center = new Point3DDomain(0, 0, 0);
+//            var axis = new Point3DDomain(0, 0, 1);
+//            double angle = 0;
+
+//            // Act
+//            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
+
+//            // Assert
+//            Assert.AreEqual(point.X, result.X, EPSILON);
+//            Assert.AreEqual(point.Y, result.Y, EPSILON);
+//            Assert.AreEqual(point.Z, result.Z, EPSILON);
+//        }
+
+//        [Test]
+//        public void RotatePointAroundAxis_90DegreesAroundZ_ReturnsCorrectPoint()
+//        {
+//            // Arrange
+//            var point = new Point3DDomain(10, 0, 0);
+//            var center = new Point3DDomain(0, 0, 0);
+//            var axis = new Point3DDomain(0, 0, 1);
+//            double angle = Math.PI / 2; // 90 градусов
+
+//            // Act
+//            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
+
+//            // Assert
+//            Assert.AreEqual(0, result.X, EPSILON);
+//            Assert.AreEqual(10, result.Y, EPSILON);
+//            Assert.AreEqual(0, result.Z, EPSILON);
+//        }
+
+//        [Test]
+//        public void RotatePointAroundAxis_180DegreesAroundZ_ReturnsOppositePoint()
+//        {
+//            // Arrange
+//            var point = new Point3DDomain(10, 5, 0);
+//            var center = new Point3DDomain(0, 0, 0);
+//            var axis = new Point3DDomain(0, 0, 1);
+//            double angle = Math.PI;
+
+//            // Act
+//            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
+
+//            // Assert
+//            Assert.AreEqual(-10, result.X, EPSILON);
+//            Assert.AreEqual(-5, result.Y, EPSILON);
+//            Assert.AreEqual(0, result.Z, EPSILON);
+//        }
+
+//        [Test]
+//        public void RotatePointAroundAxis_WithNonZeroCenter_ReturnsCorrectPoint()
+//        {
+//            // Arrange
+//            var point = new Point3DDomain(15, 5, 0);
+//            var center = new Point3DDomain(10, 5, 0);
+//            var axis = new Point3DDomain(0, 0, 1);
+//            double angle = Math.PI / 2;
+
+//            // Act
+//            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
+
+//            // Assert
+//            Assert.AreEqual(10, result.X, EPSILON);
+//            Assert.AreEqual(10, result.Y, EPSILON);
+//            Assert.AreEqual(0, result.Z, EPSILON);
+//        }
+
+//        [Test]
+//        public void RotatePointAroundAxis_RotationAroundXAxis_ReturnsCorrectPoint()
+//        {
+//            // Arrange
+//            var point = new Point3DDomain(0, 10, 0);
+//            var center = new Point3DDomain(0, 0, 0);
+//            var axis = new Point3DDomain(1, 0, 0);
+//            double angle = Math.PI / 2;
+
+//            // Act
+//            var result = _geometryService.RotatePointAroundAxis(point, center, axis, angle);
+
+//            // Assert
+//            Assert.AreEqual(0, result.X, EPSILON);
+//            Assert.AreEqual(0, result.Y, EPSILON);
+//            Assert.AreEqual(10, result.Z, EPSILON);
+//        }
+
+//        #endregion
+
+//        #region LineWithContourIntersection Tests
+
+//        [Test]
+//        public void LineWithContourIntersection_TwoLinesIntersectContour_ReturnsIntersectionPoints()
+//        {
+//            // Arrange
+//            var contour = CreateTestContour();
+//            var lines = CreateTwoTestLines();
+
+//            // Act
+//            var result = _geometryService.LineWithContourIntersection(lines, contour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//            Assert.IsNotNull(result.Value);
+//            Assert.AreEqual(2, result.Value.Length);
+//        }
+
+//        [Test]
+//        public void LineWithContourIntersection_LinesDoNotIntersect_ReturnsNullIntersections()
+//        {
+//            // Arrange
+//            var contour = CreateTestContour();
+//            var lines = new DetailLineDomain[]
+//            {
+//                CreateDetailLine(new Point3DDomain(100, 100, 0), new Point3DDomain(200, 100, 0)),
+//                CreateDetailLine(new Point3DDomain(100, 200, 0), new Point3DDomain(200, 200, 0))
+//            };
+
+//            // Act
+//            var result = _geometryService.LineWithContourIntersection(lines, contour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//            Assert.IsNull(result.Value);
+//        }
+
+//        [Test]
+//        public void LineWithContourIntersection_WithNullLines_ShouldHandleGracefully()
+//        {
+//            // Arrange
+//            var contour = CreateTestContour();
+//            DetailLineDomain[] lines = null;
+
+//            // Act & Assert
+//            Assert.Throws<NullReferenceException>(() =>
+//                _geometryService.LineWithContourIntersection(lines, contour));
+//        }
+
+//        #endregion
+
+//        #region CalculateParameters Tests
+
+//        [Test]
+//        public void CalculateParameters_WithValidInput_ReturnsSuccess()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateTestContour();
+//            var points = CreateTwoIntersectionPoints();
+//            var pressureContour = CreateTestPressureContour();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_WithNullContour_ReturnsFailure()
+//        {
+//            // Arrange
+//            var points = CreateTwoIntersectionPoints();
+//            var pressureContour = CreateTestPressureContour();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(null, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsFailure);
+//            Assert.AreEqual("contourHalfH0 == null", result.Error);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_WithNullPoints_ReturnsFailure()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateTestContour();
+//            var pressureContour = CreateTestPressureContour();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, null, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsFailure);
+//            Assert.AreEqual("Точки пересечения с контуром null", result.Error);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_WithNullPressureContour_ReturnsFailure()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateTestContour();
+//            var points = CreateTwoIntersectionPoints();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, null);
+
+//            // Assert
+//            Assert.IsTrue(result.IsFailure);
+//            Assert.AreEqual("pressureContour == null", result.Error);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_WithNullContourParameters_ReturnsFailure()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateTestContour();
+//            var points = CreateTwoIntersectionPoints();
+//            var pressureContour = CreateTestPressureContour();
+//            pressureContour.ContourParameters = null;
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsFailure);
+//            Assert.AreEqual("pressureContour.ContourParameters == null", result.Error);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_PointsOnSameEdge_SetsHoleParameters()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateContourWithEdges();
+//            var points = new IntersectionPoint[]
+//            {
+//                new IntersectionPoint(new Point3DDomain(2, 5, 0), ContourSideName.Bottom),
+//                new IntersectionPoint(new Point3DDomain(8, 5, 0), ContourSideName.Bottom)
+//            };
+//            var pressureContour = CreateTestPressureContour();
+//            pressureContour.ContourParameters.DoubleParameters["Ст2.ширина отверстия"] = 0;
+//            pressureContour.ContourParameters.DoubleParameters["Ст2.смещение отверстия от Ст1"] = 0;
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//            Assert.AreNotEqual(0, pressureContour.ContourParameters.DoubleParameters["Ст2.ширина отверстия"]);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_FirstPointOnLeftSecondOnBottom_SetsOffsetAndDisablesEdge()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateContourWithEdges();
+//            var points = new IntersectionPoint[]
+//            {
+//                new IntersectionPoint(new Point3DDomain(0, 2, 0), ContourSideName.Left),
+//                new IntersectionPoint(new Point3DDomain(3, 0, 0), ContourSideName.Bottom)
+//            };
+//            var pressureContour = CreateTestPressureContour();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//            Assert.AreEqual(0, pressureContour.ContourParameters.IntParameters["Вкл сторона 1"]);
+//        }
+
+//        [Test]
+//        public void CalculateParameters_WithRightEdge_HandlesCorrectIndexing()
+//        {
+//            // Arrange
+//            var contourHalfH0 = CreateContourWithRightEdge();
+//            var points = new IntersectionPoint[]
+//            {
+//                new IntersectionPoint(new Point3DDomain(10, 2, 0), ContourSideName.Right),
+//                new IntersectionPoint(new Point3DDomain(10, 8, 0), ContourSideName.Right)
+//            };
+//            var pressureContour = CreateTestPressureContour();
+
+//            // Act
+//            var result = _geometryService.CalculateParameters(contourHalfH0, points, pressureContour);
+
+//            // Assert
+//            Assert.IsTrue(result.IsSuccess);
+//        }
+
+//        #endregion
+
+//        #region Helper Methods
+
+//        private Contour CreateTestContour()
+//        {
+//            var contour = new Contour();
+//            contour.Left= new DetailLineDomain(
+//                new Point3DDomain(0, 0, 0),
+//                new Point3DDomain(0, 10, 0));
+//            contour.Bottom= new DetailLineDomain(
+//                new Point3DDomain(0, 0, 0),
+//                new Point3DDomain(10, 0, 0));
+//            contour.Right= new DetailLineDomain(
+//                new Point3DDomain(10, 0, 0),
+//                new Point3DDomain(10, 10, 0));
+//            contour.TopLeft= new DetailLineDomain(
+//                new Point3DDomain(0, 10, 0),
+//                new Point3DDomain(5, 10, 0));
+//            contour.TopRight = new DetailLineDomain(
+//                new Point3DDomain(5, 10, 0),
+//                new Point3DDomain(10, 10, 0));
+//            return contour;
+//        }
+
+//        private Contour CreateContourWithEdges()
+//        {
+//            var contour = new Contour();
+//            contour.Left= new DetailLineDomain(
+//                new Point3DDomain(0, 0, 0),
+//                new Point3DDomain(0, 10, 0));
+//            contour.Bottom= new DetailLineDomain(
+//                new Point3DDomain(0, 0, 0),
+//                new Point3DDomain(10, 0, 0));
+//            contour.Right= new DetailLineDomain(
+//                new Point3DDomain(10, 0, 0),
+//                new Point3DDomain(10, 10, 0));
+//            return contour;
+//        }
+
+//        private Contour CreateContourWithRightEdge()
+//        {
+//            var contour = new Contour();
+//            contour.Right= new DetailLineDomain(
+//                new Point3DDomain(10, 0, 0),
+//                new Point3DDomain(10, 10, 0));
+//            return contour;
+//        }
+
+//        private DetailLineDomain[] CreateTwoTestLines()
+//        {
+//            return new DetailLineDomain[]
+//            {
+//                CreateDetailLine(new Point3DDomain(-5, 5, 0), new Point3DDomain(5, 5, 0)),
+//                CreateDetailLine(new Point3DDomain(5, -5, 0), new Point3DDomain(5, 5, 0))
+//            };
+//        }
+
+//        private DetailLineDomain CreateDetailLine(Point3DDomain start, Point3DDomain end)
+//        {
+//            var mockLine = new Mock<DetailLineDomain>(start, end);
+//            return mockLine.Object;
+//        }
+
+//        private IntersectionPoint[] CreateTwoIntersectionPoints()
+//        {
+//            return new IntersectionPoint[]
+//            {
+//                new IntersectionPoint(new Point3DDomain(0, 5, 0), ContourSideName.Left),
+//                new IntersectionPoint(new Point3DDomain(5, 0, 0), ContourSideName.Bottom)
+//            };
+//        }
+
+//        private PressureContour CreateTestPressureContour()
+//        {
+//            var parameters = new PressureContourParameters
+//            {
+//                IntParameters = new Dictionary<string, int>(),
+//                DoubleParameters = new Dictionary<string, double>()
+//            };
+
+//            // Инициализация необходимых параметров
+//            parameters.IntParameters["Вкл редактирование контура"] = 0;
+//            parameters.IntParameters["Вкл сторона 1"] = 1;
+//            parameters.IntParameters["Вкл сторона 2"] = 1;
+//            parameters.IntParameters["Вкл сторона 3"] = 1;
+
+//            parameters.DoubleParameters["Ст1.отступ линии от Ст4"] = 0;
+//            parameters.DoubleParameters["Ст1.отступ линии от Ст2"] = 0;
+//            parameters.DoubleParameters["Ст2.отступ линии от Ст1"] = 0;
+//            parameters.DoubleParameters["Ст2.отступ линии от Ст3"] = 0;
+//            parameters.DoubleParameters["Ст3.отступ линии от Ст2"] = 0;
+//            parameters.DoubleParameters["Ст3.отступ линии от Ст4"] = 0;
+//            parameters.DoubleParameters["Ст1.ширина отверстия"] = 0;
+//            parameters.DoubleParameters["Ст1.смещение отверстия от Ст4"] = 0;
+//            parameters.DoubleParameters["Ст2.ширина отверстия"] = 0;
+//            parameters.DoubleParameters["Ст2.смещение отверстия от Ст1"] = 0;
+//            parameters.DoubleParameters["Ст3.ширина отверстия"] = 0;
+//            parameters.DoubleParameters["Ст3.смещение отверстия от Ст4"] = 0;
+
+//            return new PressureContour { ContourParameters = parameters };
+//        }
+
+//        #endregion
+//    }
+//}

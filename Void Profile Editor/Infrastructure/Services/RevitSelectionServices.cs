@@ -25,7 +25,10 @@ namespace Void_Profile_Editor.Infrastructure.Services
         public async Task<Result<PressureContour>> PickFamilyInstanceAsync(string prompt = "Выберите объект")
         {
             var result = await _revitTask.Run(app => _selectionService.PickObject());
-            return result.Value.ToDomain();
+            if (result.IsSuccess)
+                return result.Value.ToDomain();
+            else
+                return Result.Failure<PressureContour>(result.Error);
         }
 
         public async Task<Result<Point3DDomain>> PickPointAsync(string prompt = "Выберите точку")
