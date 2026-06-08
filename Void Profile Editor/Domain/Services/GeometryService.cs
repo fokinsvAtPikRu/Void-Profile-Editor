@@ -1,4 +1,5 @@
 ﻿using Autodesk.Revit.DB;
+using CSharpFunctionalExtensions;
 using System;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
@@ -50,8 +51,10 @@ namespace Void_Profile_Editor.Domain.Services
                     }
                 }
             }
-            
-            return results;
+            if (results[0] == null || results[1] == null)
+                return Result.Failure<IntersectionPoint[]>("Точки пересечения не найдены");
+            else
+                return results;
         }
 
         public CSharpFunctionalExtensions.Result CalculateParameters(Contour contourHalfH0, IntersectionPoint[] points, PressureContour pressureContour)

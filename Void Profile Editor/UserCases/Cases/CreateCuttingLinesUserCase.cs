@@ -24,7 +24,7 @@ namespace Void_Profile_Editor.UserCases.Cases
             _geometryService = geometryService;
             _pressureCounturInformationService = pressureCounturInformationService;
         }
-        public Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour) 
+        public Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour)
         {
             if (contourHalfH0 == null)
                 return Result.Failure("Контур 0.5h0 не создан");
@@ -43,7 +43,9 @@ namespace Void_Profile_Editor.UserCases.Cases
                     0);
                 cuttingLines[i] = new DetailLineDomain(point, contourHalfH0.Center);
             }
-            _drawLineService.DrawLines("Секущие линии для контура продавливания", cuttingLines.ToList());
+            var drawLineResult = _drawLineService.DrawLines("Секущие линии для контура продавливания", cuttingLines.ToList());
+            if (drawLineResult.IsFailure)
+                return Result.Failure(drawLineResult.Error);
             var resutIntersectionPoints = FindIntersection(contourHalfH0, cuttingLines);
             if (resutIntersectionPoints.IsFailure)
                 return Result.Failure(resutIntersectionPoints.Error);
@@ -55,7 +57,7 @@ namespace Void_Profile_Editor.UserCases.Cases
             var resultUpdateParameters = _pressureCounturInformationService.UpdateParameters(pressureContour);
             if (resultUpdateParameters.IsFailure)
                 return Result.Failure(resultUpdateParameters.Error);
-            return Result.Success();           
+            return Result.Success();
         }
         private Result<IntersectionPoint[]> FindIntersection(Contour contourHalfH0, DetailLineDomain[] cuttingLines)
         {
