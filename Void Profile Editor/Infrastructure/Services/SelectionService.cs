@@ -1,8 +1,8 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+using Void_Profile_Editor.Domain.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
-using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Adapters;
 
@@ -12,9 +12,13 @@ namespace Void_Profile_Editor.Infrastructure.Services
     public class SelectionService : ISelectionService
     {
         ExternalCommandData _commandData;
-        public SelectionService(ExternalCommandData commandData)
+        IAllowedFamiliesConfig _jsonConfig;
+        public SelectionService(
+            ExternalCommandData commandData,
+            IAllowedFamiliesConfig jsonConfig)
         {
             _commandData = commandData;
+            _jsonConfig = jsonConfig;
         }
 
         public CSharpFunctionalExtensions.Result<FamilyInstance> PickObject()
@@ -22,7 +26,10 @@ namespace Void_Profile_Editor.Infrastructure.Services
             try
             {
 
-                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(ObjectType.Element, new PushingEndWallSelectionFilter(), "Выберите элемент");
+                Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(
+                    ObjectType.Element, 
+                    new CalculatedPushingSelectionFilter(_jsonConfig), 
+                    "Выберите элемент");
                 FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
                 return element;
             }

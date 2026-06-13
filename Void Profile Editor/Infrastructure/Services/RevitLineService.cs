@@ -89,8 +89,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 {
                     return CSharpFunctionalExtensions.Result.Failure($"Ошибка при удалении линий: {ex.Message}");
                 }
-                tr.Commit();
-                return CSharpFunctionalExtensions.Result.Success();
+                tr.Commit();                
             }
             return CSharpFunctionalExtensions.Result.Success(); 
         }

@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageReference Include="RevitTask" Version="3.0.0" />
 		<PackageReference Include="RxBim.Command.Revit.2019" Version="3.0.4" />
 	</ItemGroup>
@@ -27,6 +28,7 @@
 	<ItemGroup>
 	  <Folder Include="Domain\Abstraction\Services\RevitServices\" />
 	  <Folder Include="Domain\Abstraction\UseCases\" />
+	  <Folder Include="Domain\Models\DTOs\" />
 	</ItemGroup>
 
 </Project>
