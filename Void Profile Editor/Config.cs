@@ -3,6 +3,7 @@ using RxBim.Di;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Configuration;
 using Void_Profile_Editor.Domain.Services;
+using Void_Profile_Editor.DTOs;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Configuration;
 using Void_Profile_Editor.Infrastructure.Services;
@@ -18,7 +19,7 @@ namespace Void_Profile_Editor
         public void Configure(IServiceCollection services)
         {
             // Configuration
-            services.AddSingleton<IAllowedFamiliesConfig,JsonFammilyConfigService>();
+            services.AddSingleton<IAllowedFamiliesConfig, JsonFammilyConfigService>();
             // RevitTask
             services.AddSingleton<RevitTask>(new RevitTask());
             // Domain/Sevices
@@ -33,10 +34,10 @@ namespace Void_Profile_Editor
             // Window Service
             services.AddSingleton<IWindowService, WindowService>();
             // UserCases
-            services.AddSingleton<ICreateContourUserCase, CreateCountourUserCase>();
-            services.AddSingleton<ICreateCuttingLinesUserCase, CreateCuttingLinesUserCase>();
-            services.AddSingleton<ISelectInstanceUserCase, SelectInstanceUserCase>();
-            services.AddSingleton<IDeleteContuorLinesUserCases, DeleteContuorLinesUserCases>();
+            services.AddSingleton<ICreateContourUserCase, CreateCountourUseCase>();
+            services.AddSingleton<ICreateCuttingLinesUserCase, CreateCuttingLinesUseCase>();
+            services.AddSingleton<ISelectInstanceUserCase, SelectInstanceUseCase>();
+            services.AddSingleton<IDeleteContuorLinesUserCases, DeleteContuorLinesUseCases>();
 
             // View Model
             services.AddSingleton<MainWindowViewModel>();

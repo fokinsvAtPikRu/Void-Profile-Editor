@@ -7,22 +7,22 @@ using Void_Profile_Editor.UserCases.Abstraction;
 
 namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class CreateCuttingLinesUserCase : ICreateCuttingLinesUserCase
+    public class CreateCuttingLinesUseCase : ICreateCuttingLinesUserCase
     {
         private readonly ISelectionService _selectionService;
         private readonly IRevitLineService _drawLineService;
         private readonly IGeometryService _geometryService;
-        private readonly IRevitUpdateParametersService _pressureCounturInformationService;
-        public CreateCuttingLinesUserCase(
+        private readonly IRevitUpdateParametersService _pressureConturInformationService;
+        public CreateCuttingLinesUseCase(
             ISelectionService selectionService,
             IRevitLineService drawLineService,
             IGeometryService geometryService,
-            IRevitUpdateParametersService pressureCounturInformationService)
+            IRevitUpdateParametersService pressureConturInformationService)
         {
             _selectionService = selectionService;
             _drawLineService = drawLineService;
             _geometryService = geometryService;
-            _pressureCounturInformationService = pressureCounturInformationService;
+            _pressureConturInformationService = pressureConturInformationService;
         }
         public Result CreateCuttingLines(Contour contourHalfH0, PressureContour pressureContour)
         {
@@ -54,7 +54,7 @@ namespace Void_Profile_Editor.UserCases.Cases
                 .ThenBy(p => p.Point.DistanceTo(contourHalfH0.GetLine(p.SideName).Start))
                 .ToArray();
             _geometryService.CalculateParameters(contourHalfH0, orderedPoints, pressureContour);
-            var resultUpdateParameters = _pressureCounturInformationService.UpdateParameters(pressureContour);
+            var resultUpdateParameters = _pressureConturInformationService.UpdateParameters(pressureContour);
             if (resultUpdateParameters.IsFailure)
                 return Result.Failure(resultUpdateParameters.Error);
             return Result.Success();

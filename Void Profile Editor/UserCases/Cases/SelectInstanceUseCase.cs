@@ -6,11 +6,11 @@ using Void_Profile_Editor.UserCases.Results;
 
 namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class SelectInstanceUserCase : ISelectInstanceUserCase
+    public class SelectInstanceUseCase : ISelectInstanceUserCase
     {
         IRevitSelectionServices _revitSelectionService;
 
-        public SelectInstanceUserCase(IRevitSelectionServices revitSelectionService)
+        public SelectInstanceUseCase(IRevitSelectionServices revitSelectionService)
         {
             _revitSelectionService = revitSelectionService;
         }

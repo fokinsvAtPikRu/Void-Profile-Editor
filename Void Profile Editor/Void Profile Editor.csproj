@@ -27,8 +27,14 @@
 
 	<ItemGroup>
 	  <Folder Include="Domain\Abstraction\Services\RevitServices\" />
-	  <Folder Include="Domain\Abstraction\UseCases\" />
-	  <Folder Include="Domain\Models\DTOs\" />
+	  <Folder Include="Domain\Abstraction\need to delete\" />
+	  <Folder Include="Domain\Services\need to delete\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Infrastructure\Configuration\FamilyTypesConfig.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

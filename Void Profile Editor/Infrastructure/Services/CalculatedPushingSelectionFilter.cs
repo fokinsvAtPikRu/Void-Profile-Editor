@@ -2,6 +2,7 @@
 using Autodesk.Revit.UI.Selection;
 using System;
 using Void_Profile_Editor.Domain.Configuration;
+using Void_Profile_Editor.DTOs;
 
 namespace Void_Profile_Editor.Infrastructure.Services
 {

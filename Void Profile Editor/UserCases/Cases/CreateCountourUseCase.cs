@@ -7,11 +7,11 @@ using Void_Profile_Editor.UserCases.Results;
 
 namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class CreateCountourUserCase : ICreateContourUserCase
+    public class CreateCountourUseCase : ICreateContourUserCase
     {
         private readonly ICreateContourService _createContourService;
 
-        public CreateCountourUserCase(ICreateContourService createContourService)
+        public CreateCountourUseCase(ICreateContourService createContourService)
         {
             _createContourService = createContourService;
         }

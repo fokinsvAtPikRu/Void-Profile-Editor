@@ -1,39 +1,33 @@
-﻿using System;
+﻿using CSharpFunctionalExtensions;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using CSharpFunctionalExtensions;
-using Newtonsoft.Json;
 using Void_Profile_Editor.Domain.Configuration;
+using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.DTOs;
 
 namespace Void_Profile_Editor.Infrastructure.Configuration
 {
     public class JsonFammilyConfigService : IAllowedFamiliesConfig
     {
         private readonly string _configPath;        
-        private HashSet<string> _allowedFamilyNames;
+        private Dictionary<string,PressureContourParameters> _familyParameters;
         private readonly object _lock = new object();
-        private bool _isConfigLoaded = false;
-
-        public IReadOnlyCollection<string> AllowedFamilyNames { get; private set; }
-
-        public IReadOnlyCollection<string> AllowedFamilies => throw new NotImplementedException();
-
-        public event Action<IReadOnlyCollection<string>> OnConfigChanged;
-
+        
         public JsonFammilyConfigService(string configPath = null)
         {
             _configPath = configPath ?? GetDefaultConfigPath();
-            var result =LoadConfig();
-            _isConfigLoaded = result.IsSuccess;
+            var result =LoadConfig();            
         }
 
+        public int Count => _familyParameters.Count;
         private string GetDefaultConfigPath()
         {
             var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
             var directory = Path.GetDirectoryName(assemblyLocation);
-            var configPath = Path.Combine(directory, "Configuration", "FamilyTypesConfig.json");
+            var configPath = Path.Combine(directory, "Infrastructure", "Configuration", "FamilyTypesConfig.json");
             if (Directory.Exists(configPath))
                 configPath = Path.Combine(directory, "FamilyTypesConfig.json");
             return configPath;
@@ -45,29 +39,30 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
                 try
                 {
                     if (!File.Exists(_configPath))
+                    {
+                        _familyParameters = new Dictionary<string,PressureContourParameters>();
                         return Result.Failure($"Config file not found: {_configPath}");
+                    }
 
                     var json = File.ReadAllText(_configPath);
-                    var dto = JsonConvert.DeserializeObject<AllowedFamilies>(json);
+                    var dto = JsonConvert.DeserializeObject<AllowedFamiliesConfigDto>(json);
 
-                    var newNames = new HashSet<string>();
-                    if (dto?.AllowedFamilyNames != null)
+                    var newParameters = new Dictionary<string, PressureContourParameters>();
+                    if (dto?.AllowedFamiliesNames != null)
                     {
-                        foreach (var family in dto.AllowedFamilyNames)
+                        foreach (var family in dto.AllowedFamiliesNames)
                         {
                             if (!string.IsNullOrEmpty(family?.FamilyName))
-                                newNames.Add(family.FamilyName);
+                            {
+                                var parameters = new PressureContourParameters(
+                                    family.FamilyName,
+                                    family.Parameters?.DoubleParameters ?? new Dictionary<string, double>(),
+                                    family.Parameters?.IntParameters ?? new Dictionary<string, int>());
+                                newParameters[family.FamilyName] = parameters;
+                            }                                
                         }
                     }
-
-                    var oldNames = _allowedFamilyNames;
-                    _allowedFamilyNames = newNames;
-                    AllowedFamilyNames = new ReadOnlyCollection<string>(newNames.ToList());
-
-                    if (oldNames != null && !oldNames.SetEquals(newNames))
-                    {
-                        OnConfigChanged?.Invoke(AllowedFamilyNames);
-                    }
+                    _familyParameters = newParameters;
                 }
                 catch (Exception ex) 
                 { 
@@ -79,12 +74,25 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
 
         public bool IsAllowed(string familyName)
         {
-            if (string.IsNullOrEmpty(familyName)) 
-                return false;
-            return _allowedFamilyNames?.Contains(familyName) ?? false;
+            return string.IsNullOrEmpty(familyName) && _familyParameters.ContainsKey(familyName);
         }
 
+        public IReadOnlyList<string> GetAllowedFamilies()
+        {
+            return _familyParameters.Keys.ToList().AsReadOnly();
+        }
+
+
         public Result Reload() => LoadConfig();
-        
+
+        public PressureContourParameters GetParametersForFamily()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGetParametersForFamily(string familyName, out PressureContourParameters parameters)
+        {
+            return _familyParameters.TryGetValue(familyName, out parameters);
+        }
     }
 }

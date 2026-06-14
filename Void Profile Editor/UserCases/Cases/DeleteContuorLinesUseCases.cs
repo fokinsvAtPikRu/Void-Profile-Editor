@@ -5,10 +5,10 @@ using Void_Profile_Editor.UserCases.Abstraction;
 
 namespace Void_Profile_Editor.UserCases.Cases
 {
-    public class DeleteContuorLinesUserCases : IDeleteContuorLinesUserCases
+    public class DeleteContuorLinesUseCases : IDeleteContuorLinesUserCases
     {
         private readonly IRevitLineService _revitLineService;
-        public DeleteContuorLinesUserCases(
+        public DeleteContuorLinesUseCases(
             IRevitLineService revitLineService)
         {
             _revitLineService = revitLineService;
