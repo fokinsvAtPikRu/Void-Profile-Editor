@@ -74,7 +74,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
 
         public bool IsAllowed(string familyName)
         {
-            return string.IsNullOrEmpty(familyName) && _familyParameters.ContainsKey(familyName);
+            return !string.IsNullOrEmpty(familyName) && _familyParameters.ContainsKey(familyName);
         }
 
         public IReadOnlyList<string> GetAllowedFamilies()
