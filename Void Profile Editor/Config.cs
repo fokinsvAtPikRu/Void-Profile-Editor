@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RxBim.Di;
+using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Abstraction.Services;
-using Void_Profile_Editor.Domain.Configuration;
 using Void_Profile_Editor.Domain.Services;
 using Void_Profile_Editor.DTOs;
 using Void_Profile_Editor.Infrastructure.Abstraction;
@@ -19,7 +19,7 @@ namespace Void_Profile_Editor
         public void Configure(IServiceCollection services)
         {
             // Configuration
-            services.AddSingleton<IAllowedFamiliesConfig, JsonFammilyConfigService>();
+            services.AddSingleton<IAllowedFamiliesConfig, JsonFamilyConfigService>();
             // RevitTask
             services.AddSingleton<RevitTask>(new RevitTask());
             // Domain/Sevices

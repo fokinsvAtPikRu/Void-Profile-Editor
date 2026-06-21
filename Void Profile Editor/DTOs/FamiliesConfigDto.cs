@@ -1,35 +1,42 @@
-﻿using CSharpFunctionalExtensions;
-using Newtonsoft.Json;
-using System;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
-using Void_Profile_Editor.Domain.Configuration;
-using Void_Profile_Editor.Domain.Model.Geometry;
 
 namespace Void_Profile_Editor.DTOs
 {
     public class AllowedFamiliesConfigDto 
     {
         [JsonProperty("AllowedFamilyNames")]
-        public List<AllowedFamilyDto> AllowedFamiliesNames { get; set; }
+        public List<AllowedFamilyDto> AllowedFamilyNames { get; set; }
     }
     public class AllowedFamilyDto
     {
         [JsonProperty("FamilyName")]
         public string FamilyName { get; set; }
-        [JsonProperty("Parameters")]
-        public FamilyParametersDto Parameters { get; set; }
-    }
 
-    public class AllowedFamilies
-    {
-        public List<AllowedFamilyDto> AllowedFamilyNames { get; set; }
-    }
-    public class FamilyParametersDto
-    {
         [JsonProperty("DoubleParameters")]
-        public Dictionary<string,double> DoubleParameters { get; set; }
-        [JsonProperty("IntParameters")]
-        public Dictionary<string, int> IntParameters { get; set; }
+        public List<string> DoubleParameters { get; set; }
 
+        [JsonProperty("IntParameters")]
+        public List<string> IntParameters { get; set; }
+
+        [JsonProperty("ParameterMappings")]
+        public Dictionary<string,SideMappingDto> ParameterMappings {  get; set; }
+    }
+    public class SideMappingDto
+    {
+        [JsonProperty("Enabled")]
+        public string Enabled { get; set; }
+
+        [JsonProperty("OffsetStart")]
+        public string OffsetStart { get; set; }
+
+        [JsonProperty("OffsetEnd")]
+        public string OffsetEnd { get; set; }
+
+        [JsonProperty("HoleOffset")]
+        public string HoleOffset { get; set; }
+
+        [JsonProperty("HoleWidth")]
+        public string HoleWidth { get; set; }       
     }
 }

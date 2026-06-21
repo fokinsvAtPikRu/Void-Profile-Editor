@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using CSharpFunctionalExtensions;
 using Void_Profile_Editor.Domain.Model.Geometry;
-using Void_Profile_Editor.Domain.Configuration;
 using Autodesk.Revit.DB.Structure;
+using Void_Profile_Editor.Domain.Abstraction.Configuration;
 
 
 namespace Void_Profile_Editor.Infrastructure.Adapters

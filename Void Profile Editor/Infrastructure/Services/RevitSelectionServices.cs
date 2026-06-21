@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
+using Autodesk.Revit.DB;
 using CSharpFunctionalExtensions;
+using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Adapters;
@@ -9,14 +11,17 @@ namespace Void_Profile_Editor.Infrastructure.Services
     public class RevitSelectionServices : IRevitSelectionServices
     {
         private readonly RevitTask _revitTask;
+        private IAllowedFamiliesConfig _config;
         private readonly ISelectionService _selectionService;
 
         public RevitSelectionServices(
             RevitTask revitTask,
+            IAllowedFamiliesConfig config,
             ISelectionService selectionService
             )
         {
             _revitTask = revitTask;
+            _config = config;
             _selectionService = selectionService;
         }
 
@@ -26,7 +31,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
         {
             var result = await _revitTask.Run(app => _selectionService.PickObject());
             if (result.IsSuccess)
-                return result.Value.ToDomain();
+                return result.Value.ToDomain(_config);            
             else
                 return Result.Failure<PressureContour>(result.Error);
         }
