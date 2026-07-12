@@ -29,66 +29,67 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
             revitId.IntegerValue.ToString();
         public static Result<PressureContour> ToDomain(this FamilyInstance instance, IAllowedFamiliesConfig config)
         {
-            if (instance == null) 
+            if (instance == null)
                 return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: instsnce == null");
             if (config == null)
                 return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: config == null");
             var familyName = instance.Symbol?.FamilyName;
             if (string.IsNullOrEmpty(familyName))
                 return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: familyName is null or empty");
-            
-            if (config.TryGetParametersForFamily(familyName,out var parameter))
-            {   
-                var missingParameters = new List<string>();
-                var typeMismatchParameters = new List<string>();
-                foreach (var key in parameter.DoubleParameters.Keys)
+            // получаем имена параметров из конфига
+            var result = config.GetParameterNamesForFamily(familyName);
+            if (result.IsFailure)
+                return Result.Failure<PressureContour>(result.Error);
+            var parameters = result.Value;
+            var doubleParameters = new Dictionary<string, double>();
+            var intParameters = new Dictionary<string, int>();
+            var missingParameters = new List<string>();
+            var typeMismatchParameters = new List<string>();
+            foreach (var key in parameters.DoubleParameters.Keys)
+            {
+                var value = instance.LookupParameter(key);
+                if (value == null)
                 {
-                    var value = instance.LookupParameter(key);
-                    if (value == null)
-                    {
-                        missingParameters.Add(key);
-                        continue;
-                    }
-                    if (value.StorageType == StorageType.Double)
-                    {
-                        parameter.DoubleParameters[key] = value.AsDouble();
-                    }
-                    else
-                    {
-                        typeMismatchParameters.Add($"{key} ожидался Double, получен {value.StorageType}");
-                    }
+                    missingParameters.Add(key);
+                    continue;
                 }
-                foreach (var key in parameter.IntParameters.Keys)
+                if (value.StorageType == StorageType.Double)
                 {
-                    var value = instance.LookupParameter(key);
-                    if (value == null)
-                    {
-                        missingParameters.Add(key);
-                        continue;
-                    }
-                    if (value.StorageType == StorageType.Integer)
-                    {
-                        parameter.DoubleParameters[key] = value.AsInteger();
-                    }
-                    else
-                    {
-                        typeMismatchParameters.Add($"{key} ожидался Integer, получен {value.StorageType}");
-                    }
+                    doubleParameters.Add(key, value.AsDouble());                   
                 }
-                return new PressureContour()
+                else
                 {
-                    Id = instance.Id.ToDomain(),
-                    InsertPoint = ((LocationPoint)instance.Location).Point.ToDomain(),
-                    Rotation = ((LocationPoint)instance.Location).Rotation,
-                    ContourParameters = new PressureContourParameters(
-                        parameter.FamilyName,
-                        parameter.DoubleParameters,
-                        parameter.IntParameters),
-                    IsMirrored = instance.Mirrored
-                };
+                    typeMismatchParameters.Add($"{key} ожидался Double, получен {value.StorageType}");
+                }
             }
-            return Result.Failure<PressureContour>
-                ($"Adapter Revit to Domain PressureContour: failed to get parameters for family {parameter.FamilyName}");
+            foreach (var key in parameters.IntParameters.Keys)
+            {
+                var value = instance.LookupParameter(key);
+                if (value == null)
+                {
+                    missingParameters.Add(key);
+                    continue;
+                }
+                if (value.StorageType == StorageType.Integer)
+                {
+                    intParameters.Add(key, value.AsInteger());                    
+                }
+                else
+                {
+                    typeMismatchParameters.Add($"{key} ожидался Integer, получен {value.StorageType}");
+                }
+            }
+            return new PressureContour()
+            {
+                Id = instance.Id.ToDomain(),
+                InsertPoint = ((LocationPoint)instance.Location).Point.ToDomain(),
+                Rotation = ((LocationPoint)instance.Location).Rotation,
+                ContourParameters = new PressureContourParameters(
+                    parameters.FamilyName,
+                    doubleParameters,
+                    intParameters),
+                IsMirrored = instance.Mirrored
+            };
         }
     }
 }

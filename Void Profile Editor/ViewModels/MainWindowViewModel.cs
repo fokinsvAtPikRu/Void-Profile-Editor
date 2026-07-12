@@ -19,7 +19,7 @@ namespace Void_Profile_Editor.ViewModels
         // RevitTask
         private RevitTask _revitTask;
         // Services
-        private readonly IRevitMessageService _revitMsaageService;
+        private readonly IRevitMessageService _revitMessageService;
 
         // Commands
         private readonly AsyncRelayCommand _selectFamilyInstanceCommand;
@@ -79,7 +79,7 @@ namespace Void_Profile_Editor.ViewModels
             _createCuttingLinesUserCase = createCuttingLinesUserCase;            
             _deleteContuorLinesUserCases = deleteContuorLinesUserCases;
             // Message Service
-            _revitMsaageService=revitMessageService;
+            _revitMessageService=revitMessageService;
             // Commands
             _selectFamilyInstanceCommand = new AsyncRelayCommand(AsyncSelectSelectFamilyInstance);
             _createContourCommand = new AsyncRelayCommand(AsyncCreateContour, CanCreateContourCommandExecuted);
@@ -116,7 +116,7 @@ namespace Void_Profile_Editor.ViewModels
             if (result.IsSuccess)
                 ResultSelectInstance = result.Value;
             else 
-                _revitMsaageService.ShowMessage("Error", $"Error:{result.Error}");
+                _revitMessageService.ShowMessage("Error", $"Error:{result.Error}");
         }
         #endregion
         #region Method Execute for CreateContourCommand
@@ -129,7 +129,7 @@ namespace Void_Profile_Editor.ViewModels
         {
             var result = _createContourUserCase.CreateContour(ResultSelectInstance);
             if (result.IsFailure)
-                _revitMsaageService.ShowMessage("Ошибка", $"Error:{result.Error}");
+                _revitMessageService.ShowMessage("Ошибка", $"Error:{result.Error}");
             else
                 ResultCreateContour = result.Value;
         }
@@ -151,7 +151,7 @@ namespace Void_Profile_Editor.ViewModels
                 ResultCreateContour.ContourHalfH0,
                 ResultSelectInstance.PressureContour);
             if (result.IsFailure)
-                _revitMsaageService.ShowMessage("Ошибка", result.Error);
+                _revitMessageService.ShowMessage("Ошибка", result.Error);
         }
         
         #endregion
@@ -164,7 +164,7 @@ namespace Void_Profile_Editor.ViewModels
         {
             var result = _deleteContuorLinesUserCases.DeleteLines(ResultCreateContour.LinesIdsForDelete);
             if (result.IsFailure)            
-                _revitMsaageService.ShowMessage("Ошибка", result.Error);
+                _revitMessageService.ShowMessage("Ошибка", result.Error);
             else
             {
                 ResultCreateContour = null;

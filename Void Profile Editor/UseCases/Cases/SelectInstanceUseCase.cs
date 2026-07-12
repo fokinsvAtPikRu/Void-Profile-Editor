@@ -27,7 +27,7 @@ namespace Void_Profile_Editor.UserCases.Cases
             }
             else
             {
-                return Result.Failure<ResultSelectInstanceUserCase>("Объект не выбран");
+                return Result.Failure<ResultSelectInstanceUserCase>(result.Error);
             }
         }
     }

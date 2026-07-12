@@ -31,7 +31,13 @@ namespace Void_Profile_Editor.Infrastructure.Services
         {
             var result = await _revitTask.Run(app => _selectionService.PickObject());
             if (result.IsSuccess)
-                return result.Value.ToDomain(_config);            
+            {
+                var instance = result.Value;
+                var resultToDomain = instance.ToDomain(_config);
+                if (resultToDomain.IsFailure)
+                    return Result.Failure<PressureContour>(resultToDomain.Error);
+                return resultToDomain.Value;
+            }
             else
                 return Result.Failure<PressureContour>(result.Error);
         }

@@ -6,7 +6,15 @@ namespace Void_Profile_Editor.DTOs
     public class AllowedFamiliesConfigDto 
     {
         [JsonProperty("AllowedFamilyNames")]
-        public List<AllowedFamilyDto> AllowedFamilyNames { get; set; }
+        public List<AlowwedFamilyWrapperDto> AllowedFamilyNames { get; set; }
+    }
+    public class AlowwedFamilyWrapperDto
+    {
+        [JsonProperty("FamilyName")]
+        public string FamilyName { get; set; }
+
+        [JsonProperty("Parameters")]
+        public AllowedFamilyDto Parameters { get; set; }
     }
     public class AllowedFamilyDto
     {

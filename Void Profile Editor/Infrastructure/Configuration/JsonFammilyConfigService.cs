@@ -7,20 +7,27 @@ using System.Linq;
 using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.DTOs;
+using Void_Profile_Editor.Infrastructure.Abstraction;
 
 namespace Void_Profile_Editor.Infrastructure.Configuration
 {
     public class JsonFamilyConfigService : IAllowedFamiliesConfig
     {
         private readonly string _configPath;
-        private Dictionary<string, AllowedFamilyDto> _familyConfigs = new Dictionary<string, AllowedFamilyDto>();
-        private Dictionary<string, PressureContourParameters> _familyParameters = new Dictionary<string, PressureContourParameters>();
+        private Dictionary<string, AlowwedFamilyWrapperDto> _familyConfigs = new Dictionary<string, AlowwedFamilyWrapperDto>();
+        //private Dictionary<string, PressureContourParameters> _familyParameters = new Dictionary<string, PressureContourParameters>();
+        private IRevitMessageService _revitMessageService;
         private readonly object _lock = new object();
 
-        public JsonFamilyConfigService(string configPath = null)
+        public JsonFamilyConfigService(
+            IRevitMessageService revitMessageService,
+            string configPath = null)
         {
+            _revitMessageService = revitMessageService;
             _configPath = configPath ?? GetDefaultConfigPath();
-            LoadConfig();
+            var result = LoadConfig();
+            if (result.IsFailure)
+                _revitMessageService.ShowMessage("Error", result.Error);
         }
 
         public int Count => _familyConfigs.Count;
@@ -30,7 +37,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
             var directory = Path.GetDirectoryName(assemblyLocation);
             var configPath = Path.Combine(directory, "Infrastructure", "Configuration");
             if (Directory.Exists(configPath))
-                configPath = Path.Combine(directory, "FamilyTypesConfig.json");
+                configPath = Path.Combine(configPath, "FamilyTypesConfig.json");
             return configPath;
         }
         private Result LoadConfig()
@@ -47,7 +54,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
                     var json = File.ReadAllText(_configPath);
                     var dto = JsonConvert.DeserializeObject<AllowedFamiliesConfigDto>(json);
 
-                    var newConfigs = new Dictionary<string, AllowedFamilyDto>();
+                    var newConfigs = new Dictionary<string, AlowwedFamilyWrapperDto>();
                     if (dto?.AllowedFamilyNames != null)
                     {
                         foreach (var family in dto.AllowedFamilyNames)
@@ -80,47 +87,34 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
 
 
         public void Reload() => LoadConfig();
+        
 
-        public PressureContourParameters GetParametersForFamily(string familyName)
+        public Result<PressureContourParameters> GetParameterNamesForFamily(string familyName)
         {
-            if (TryGetParametersForFamily(familyName, out var parameters))
-                return parameters;
-
-            return new PressureContourParameters(familyName);
-        }
-
-        public bool TryGetParametersForFamily(string familyName, out PressureContourParameters parameters)
-        {
-            parameters = null;
-
             if (string.IsNullOrEmpty(familyName))
-                return false;
-
-            return _familyParameters?.TryGetValue(familyName, out parameters) ?? false;
+                return Result.Failure< PressureContourParameters>("familyName is null or empty");
+            if (_familyConfigs[familyName].Parameters.DoubleParameters == null)
+                return Result.Failure<PressureContourParameters>("DoubleParameters is null");
+            if (_familyConfigs[familyName].Parameters.DoubleParameters.Count == 0)
+                return Result.Failure<PressureContourParameters>("DoubleParameters is empty");
+            if (_familyConfigs[familyName].Parameters.IntParameters == null)
+                return Result.Failure<PressureContourParameters>("IntParameters is null");
+            if (_familyConfigs[familyName].Parameters.IntParameters.Count == 0)
+                return Result.Failure<PressureContourParameters>("IntParameters is empty");
+            var doubleParameters = new Dictionary<string, double>();
+            foreach (var p in _familyConfigs[familyName].Parameters.DoubleParameters)
+            {
+                doubleParameters.Add(p, 0.0);
+            }
+            var intParameters = new Dictionary<string, int>();
+            foreach (var p in _familyConfigs[familyName].Parameters.IntParameters)
+            {
+                intParameters.Add(p, 0);
+            }
+            return new PressureContourParameters(familyName, doubleParameters, intParameters);            
         }
-
-        public IEnumerable<string> GetAllDoubleParameters()
-        {
-            if (_familyParameters == null)
-                return Enumerable.Empty<string>();
-
-            return _familyParameters.Values
-                .SelectMany(p => p.DoubleParameters?.Keys ?? Enumerable.Empty<string>())
-                .Distinct()
-                .OrderBy(name => name);
-        }
-
-        public IEnumerable<string> GetAllIntParameters()
-        {
-            if (_familyParameters == null)
-                return Enumerable.Empty<string>();
-
-            return _familyParameters.Values
-                .SelectMany(p => p.IntParameters?.Keys ?? Enumerable.Empty<string>())
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        public AllowedFamilyDto GetFamilyConfig(string familyName)
+        
+        public AlowwedFamilyWrapperDto GetFamilyConfig(string familyName)
         {
             return _familyConfigs.TryGetValue(familyName, out var config) ? config : null;
         }

@@ -19,7 +19,7 @@ namespace Void_Profile_Editor
         public void Configure(IServiceCollection services)
         {
             // Configuration
-            services.AddSingleton<IAllowedFamiliesConfig, Void_Profile_Editor.Infrastructure.Configuration.JsonFamilyConfigService>();
+            services.AddSingleton<IAllowedFamiliesConfig, JsonFamilyConfigService>();
             services.AddSingleton<IParameterNameConfig, FamilyParameterNameConfig>();
             // RevitTask
             services.AddSingleton<RevitTask>(new RevitTask());
@@ -29,7 +29,7 @@ namespace Void_Profile_Editor
             // Infrastructure/Services
             services.AddSingleton<IRevitLineService, RevitLineService>();
             services.AddSingleton<IRevitMessageService, RevitMessageService>();
-            services.AddSingleton<IRevitSelectionServices,RevitSelectionServices>();
+            services.AddSingleton<IRevitSelectionServices, RevitSelectionServices>();
             services.AddSingleton<IRevitUpdateParametersService, RevitUpdateParametersService>();
             services.AddSingleton<ISelectionService, SelectionService>();
             // Window Service
