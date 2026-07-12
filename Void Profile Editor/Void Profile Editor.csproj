@@ -8,6 +8,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Infrastructure\Configuration\JsonFammilyConfigService.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
@@ -30,6 +34,12 @@
 	  <Folder Include="Domain\Abstraction\Services\RevitServices\" />
 	  <Folder Include="Domain\Abstraction\need to delete\" />
 	  <Folder Include="Domain\Services\need to delete\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Infrastructure\Configuration\JsonFammilyConfigService.cs">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>

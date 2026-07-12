@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.DTOs;
 
 namespace Void_Profile_Editor.Infrastructure.Configuration
 {
-    public class FamilyParameterNameConfig
+    public class FamilyParameterNameConfig : IParameterNameConfig
     {
         private readonly string _familyName;
         private readonly Dictionary<string, string> _parameterMap;

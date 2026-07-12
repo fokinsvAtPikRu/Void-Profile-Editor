@@ -12,23 +12,22 @@ namespace Void_Profile_Editor.Infrastructure.Services
     public class SelectionService : ISelectionService
     {
         ExternalCommandData _commandData;
-        IAllowedFamiliesConfig _jsonConfig;
+        IAllowedFamiliesConfig _familyConfig;
         public SelectionService(
             ExternalCommandData commandData,
             IAllowedFamiliesConfig jsonConfig)
         {
             _commandData = commandData;
-            _jsonConfig = jsonConfig;
+            _familyConfig = jsonConfig;
         }
 
         public CSharpFunctionalExtensions.Result<FamilyInstance> PickObject()
         {
             try
             {
-
                 Reference reference = _commandData.Application.ActiveUIDocument.Selection.PickObject(
                     ObjectType.Element, 
-                    new CalculatedPushingSelectionFilter(_jsonConfig), 
+                    new CalculatedPushingSelectionFilter(_familyConfig), 
                     "Выберите элемент");
                 FamilyInstance element = _commandData.Application.ActiveUIDocument.Document.GetElement(reference) as FamilyInstance;
                 return element;

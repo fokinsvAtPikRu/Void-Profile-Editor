@@ -1,18 +1,29 @@
-﻿using System;
+﻿using CSharpFunctionalExtensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Void_Profile_Editor.Domain.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
+using Void_Profile_Editor.DTOs;
+using Void_Profile_Editor.Infrastructure.Configuration;
 
 namespace Void_Profile_Editor.Domain.Abstraction.Configuration
 {
     public interface IParameterNameConfig
     {
-        string GetEdgeEnabledParameter(ContourSideName side);
-        (string offset, string width) GetHoleParameters(ContourSideName side);
-        string GetOffsetParameter(ContourSideName side,bool isStartPoint);
-        bool ValidateParameters(PressureContourParameters parameters);
+        public string GetParameterName(ParameterRole role, ContourSideName side, bool isStart = false);
+
+        public IReadOnlyCollection<string> GetAllParameterNames();
+
+        public ParameterDictionary GetDefaultValues();
+
+        public SideMappingDto GetSideMapping(ContourSideName side);
+
+
+        public IReadOnlyList<ContourSideName> GetAvailableSides();
+
+
+        public bool HasParameter(string parameterName);
+        
     }
 }

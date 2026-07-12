@@ -19,7 +19,8 @@ namespace Void_Profile_Editor
         public void Configure(IServiceCollection services)
         {
             // Configuration
-            services.AddSingleton<IAllowedFamiliesConfig, JsonFamilyConfigService>();
+            services.AddSingleton<IAllowedFamiliesConfig, Void_Profile_Editor.Infrastructure.Configuration.JsonFamilyConfigService>();
+            services.AddSingleton<IParameterNameConfig, FamilyParameterNameConfig>();
             // RevitTask
             services.AddSingleton<RevitTask>(new RevitTask());
             // Domain/Sevices
