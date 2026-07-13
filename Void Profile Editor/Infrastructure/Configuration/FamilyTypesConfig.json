@@ -3,6 +3,11 @@
     {
       "FamilyName": "075_Расчет на продавливание торцом стены (ОбщМод_Плита)",
       "Parameters": {
+        "ActiveEdge": [
+          "Left",
+          "Bottom",
+          "Right"
+        ],
         "DoubleParameters": [
           "h0",
           "Толщина",
@@ -53,6 +58,11 @@
     {
       "FamilyName": "075_Расчет на продавливание углом (ОбщМод_Плита)",
       "Parameters": {
+        "ActiveEdge": [
+          "Left",
+          "Bottom",
+          "Right"
+        ],
         "DoubleParameters": [
           "h0",
           "Толщина",
@@ -91,6 +101,12 @@
     {
       "FamilyName": "075_Расчет на продавливание пилоном (ОбщМод_Плита)",
       "Parameters": {
+        "ActiveEdge": [
+          "Top",
+          "Left",
+          "Bottom",
+          "Right"
+        ],
         "DoubleParameters": [
           "h0",
           "Толщина",

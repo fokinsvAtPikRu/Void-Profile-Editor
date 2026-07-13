@@ -25,9 +25,9 @@ namespace Void_Profile_Editor.UserCases.Cases
             var resultCreate6H0Contour = Create6H0Contour(pressureContour);
             if (resultCreate6H0Contour.IsFailure)
                 return Result.Failure<ResultCreateContourUserCase>(resultCreate6H0Contour.Error);
-            var resutDrawContour = _createContourService.DrawContour(resultCreate6H0Contour.Value);
-            if (resutDrawContour.IsFailure)
-                return Result.Failure<ResultCreateContourUserCase>(resutDrawContour.Error);
+            var resultDrawContour = _createContourService.DrawContour(resultCreate6H0Contour.Value);
+            if (resultDrawContour.IsFailure)
+                return Result.Failure<ResultCreateContourUserCase>(resultDrawContour.Error);
             var resultCreateHalfH0Contour = CreateHalfH0Contour(pressureContour);
             if (resultCreateHalfH0Contour.IsFailure)
                 return Result.Failure<ResultCreateContourUserCase>(resultCreateHalfH0Contour.Error);
@@ -35,30 +35,32 @@ namespace Void_Profile_Editor.UserCases.Cases
             {
                 Contour6H0 = resultCreate6H0Contour.Value,
                 ContourHalfH0 = resultCreateHalfH0Contour.Value,
-                LinesIdsForDelete = resutDrawContour.Value
+                LinesIdsForDelete = resultDrawContour.Value
             };
         }
         private Result<Contour> Create6H0Contour(PressureContour pressureContour)
         {
             return _createContourService.Create(
+                pressureContour.FamilyName,
                 pressureContour.InsertPoint,
                 pressureContour.Rotation,
                 pressureContour.ContourParameters.DoubleParameters["h0"],
                 pressureContour.ContourParameters.DoubleParameters["Толщина"],
                 6 * pressureContour.ContourParameters.DoubleParameters["h0"],
                 pressureContour.IsMirrored).Value;
-            
+
         }
         private Result<Contour> CreateHalfH0Contour(PressureContour pressureContour)
         {
             return _createContourService.Create(
+               pressureContour.FamilyName,
                pressureContour.InsertPoint,
                pressureContour.Rotation,
                pressureContour.ContourParameters.DoubleParameters["h0"],
                pressureContour.ContourParameters.DoubleParameters["Толщина"],
                0.5 * pressureContour.ContourParameters.DoubleParameters["h0"],
                pressureContour.IsMirrored).Value;
-            
+
         }
     }
 }

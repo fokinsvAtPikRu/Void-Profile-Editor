@@ -11,7 +11,8 @@ namespace Void_Profile_Editor.Domain.Abstraction.Services
     public interface ICreateContourService
     {
         CSharpFunctionalExtensions.Result<Contour> Create
-            (Point3DDomain locationPoint,
+            (string familyName,
+            Point3DDomain locationPoint,
             double rotationAngle,
             double h0,
             double thickness,

@@ -82,6 +82,7 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
             return new PressureContour()
             {
                 Id = instance.Id.ToDomain(),
+                FamilyName=familyName,
                 InsertPoint = ((LocationPoint)instance.Location).Point.ToDomain(),
                 Rotation = ((LocationPoint)instance.Location).Rotation,
                 ContourParameters = new PressureContourParameters(

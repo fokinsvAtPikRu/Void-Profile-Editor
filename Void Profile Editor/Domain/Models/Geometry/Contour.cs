@@ -9,8 +9,7 @@ namespace Void_Profile_Editor.Domain.Model.Geometry
         public DetailLineDomain Bottom { get; set; }
         public DetailLineDomain Left { get; set; }
         public DetailLineDomain Right { get; set; }
-        public DetailLineDomain TopLeft { get; set; }
-        public DetailLineDomain TopRight { get; set; }
+        public DetailLineDomain Top { get; set; }       
         public Point3DDomain Center { get; set; }
 
         public DetailLineDomain GetLine(ContourSideName side)
@@ -23,10 +22,8 @@ namespace Void_Profile_Editor.Domain.Model.Geometry
                     return Left;
                 case ContourSideName.Right:
                     return Right;
-                case ContourSideName.TopLeft:
-                    return TopLeft;
-                case ContourSideName.TopRight:
-                    return TopRight;
+                case ContourSideName.Top:
+                    return Top;                
                 default:
                     return null;
             };
@@ -34,11 +31,13 @@ namespace Void_Profile_Editor.Domain.Model.Geometry
 
         public IEnumerator<KeyValuePair<ContourSideName, DetailLineDomain>> GetEnumerator()
         {
-            yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.TopLeft, TopLeft);
-            yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Left, Left);
-            yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Bottom, Bottom);
-            yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Right, Right);
-            yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.TopRight, TopRight);
+            while (true)
+            {
+                yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Top, Top);
+                yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Left, Left);
+                yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Bottom, Bottom);
+                yield return new KeyValuePair<ContourSideName, DetailLineDomain>(ContourSideName.Right, Right);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using Void_Profile_Editor.Domain.Model.Geometry;
 
 namespace Void_Profile_Editor.DTOs
 {
@@ -20,6 +21,8 @@ namespace Void_Profile_Editor.DTOs
     {
         [JsonProperty("FamilyName")]
         public string FamilyName { get; set; }
+        [JsonProperty("ActiveEdge")]
+        public List<ContourSideName> ActiveEdge {  get; set; }
 
         [JsonProperty("DoubleParameters")]
         public List<string> DoubleParameters { get; set; }

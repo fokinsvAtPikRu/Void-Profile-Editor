@@ -2,10 +2,9 @@
 {
     public enum ContourSideName
     {
-        TopLeft = 0,
+        Top = 0,
         Left = 1,
         Bottom = 2,
-        Right=3,
-        TopRight=4
+        Right=3        
     }
 }
