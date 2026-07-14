@@ -13,17 +13,14 @@ namespace Void_Profile_Editor.Domain.Services
     public class CreateContourService :ICreateContourService
     {        
         private IGeometryService _geometryService;
-        private IRevitLineService _drawLineService;
-        private IAllowedFamiliesConfig _jsonConfig;        
+        private IRevitLineService _drawLineService;                
 
         public CreateContourService(
             IGeometryService geometryService, 
-            IRevitLineService drawLineService,
-            IAllowedFamiliesConfig jsonConfig)         
+            IRevitLineService drawLineService)         
         {            
             _geometryService = geometryService;
-            _drawLineService=drawLineService;
-            _jsonConfig=jsonConfig;
+            _drawLineService=drawLineService;            
         }
         public CSharpFunctionalExtensions.Result<Contour> Create
             (string familyName,
@@ -99,21 +96,33 @@ namespace Void_Profile_Editor.Domain.Services
                 return CSharpFunctionalExtensions.Result.Failure<Contour>(ex.Message);
             }
         }
-        public CSharpFunctionalExtensions.Result<List<string>> DrawContour(Contour contour,string familyName)
-        {
-            var resultParameters = _jsonConfig.GetParameterNamesForFamily(familyName);
-            if (resultParameters.IsFailure)
-                return CSharpFunctionalExtensions.Result.Failure<List<string>>(resultParameters.Error);
-
+        public CSharpFunctionalExtensions.Result<List<string>> DrawContour(string trnsactionName, Contour contour, List<ContourSideName> activeEdge)
+        {  
             List<DetailLineDomain> contourLines = new List<DetailLineDomain>();
-            contourLines.Add(contour.Left);
-            contourLines.Add(contour.Bottom);
-            contourLines.Add(contour.Right);
-            var result=_drawLineService.DrawLines("рисование 6H0 контура",contourLines);
+            foreach (var edge in activeEdge)
+            {
+                switch (edge)
+                {
+                    case ContourSideName.Left:
+                        contourLines.Add(contour.Left);
+                        break;
+                    case ContourSideName.Right:
+                        contourLines.Add(contour.Right);
+                        break;
+                    case ContourSideName.Top:
+                        contourLines.Add(contour.Top);
+                        break;
+                    case ContourSideName.Bottom:
+                        contourLines.Add(contour.Bottom);
+                        break;
+                }
+                    
+            }
+            var result=_drawLineService.DrawLines(trnsactionName, contourLines);
             if (result.IsSuccess)
                 return result.Value;
             else
-                return result;
+                return CSharpFunctionalExtensions.Result.Failure<List<string>>( result.Error);
             
         }
     }

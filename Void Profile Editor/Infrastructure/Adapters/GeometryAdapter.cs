@@ -87,6 +87,7 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
                 Rotation = ((LocationPoint)instance.Location).Rotation,
                 ContourParameters = new PressureContourParameters(
                     parameters.FamilyName,
+                    parameters.ActiveEdge,
                     doubleParameters,
                     intParameters),
                 IsMirrored = instance.Mirrored

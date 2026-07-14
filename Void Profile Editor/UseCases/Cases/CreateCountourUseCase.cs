@@ -25,7 +25,10 @@ namespace Void_Profile_Editor.UserCases.Cases
             var resultCreate6H0Contour = Create6H0Contour(pressureContour);
             if (resultCreate6H0Contour.IsFailure)
                 return Result.Failure<ResultCreateContourUserCase>(resultCreate6H0Contour.Error);
-            var resultDrawContour = _createContourService.DrawContour(resultCreate6H0Contour.Value);
+            var resultDrawContour = _createContourService.DrawContour(
+                "Контур 6h0",
+                resultCreate6H0Contour.Value,
+                pressureContour.ContourParameters.ActiveEdge);
             if (resultDrawContour.IsFailure)
                 return Result.Failure<ResultCreateContourUserCase>(resultDrawContour.Error);
             var resultCreateHalfH0Contour = CreateHalfH0Contour(pressureContour);
@@ -40,7 +43,7 @@ namespace Void_Profile_Editor.UserCases.Cases
         }
         private Result<Contour> Create6H0Contour(PressureContour pressureContour)
         {
-            return _createContourService.Create(
+            CSharpFunctionalExtensions.Result<Contour> result = _createContourService.Create(
                 pressureContour.FamilyName,
                 pressureContour.InsertPoint,
                 pressureContour.Rotation,
@@ -48,11 +51,12 @@ namespace Void_Profile_Editor.UserCases.Cases
                 pressureContour.ContourParameters.DoubleParameters["Толщина"],
                 6 * pressureContour.ContourParameters.DoubleParameters["h0"],
                 pressureContour.IsMirrored).Value;
+            return result.IsFailure? CSharpFunctionalExtensions.Result.Failure<Contour>(result.Error) : result.Value;
 
         }
         private Result<Contour> CreateHalfH0Contour(PressureContour pressureContour)
         {
-            return _createContourService.Create(
+            CSharpFunctionalExtensions.Result<Contour> result = _createContourService.Create(
                pressureContour.FamilyName,
                pressureContour.InsertPoint,
                pressureContour.Rotation,
@@ -60,7 +64,7 @@ namespace Void_Profile_Editor.UserCases.Cases
                pressureContour.ContourParameters.DoubleParameters["Толщина"],
                0.5 * pressureContour.ContourParameters.DoubleParameters["h0"],
                pressureContour.IsMirrored).Value;
-
+            return result.IsFailure ? CSharpFunctionalExtensions.Result.Failure<Contour>(result.Error) : result.Value;
         }
     }
 }
