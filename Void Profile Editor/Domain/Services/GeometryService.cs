@@ -2,14 +2,24 @@
 using Autodesk.Revit.DB;
 using CSharpFunctionalExtensions;
 using System;
+using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Abstraction.Services;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Adapters;
+using Void_Profile_Editor.Infrastructure.Configuration;
 
 namespace Void_Profile_Editor.Domain.Services
 {
     public class GeometryService : IGeometryService
     {
+        private readonly IParameterNameConfig _parameterNameConfig;
+
+        public GeometryService(IParameterNameConfig parameterNameConfig)
+        {
+            _parameterNameConfig = parameterNameConfig;
+        }
+
+
         /// <summary>
         /// вычисление координаты точки с учетом Rotation вокруг LocationPoint
         /// </summary>
@@ -137,7 +147,71 @@ namespace Void_Profile_Editor.Domain.Services
             }            
             return CSharpFunctionalExtensions.Result.Success();
         }
+        #region Вспомогательные методы для работы с параметрами через конфигурацию
 
+        private void SetIntParameter(PressureContourParameters parameters, string paramName, int value)
+        {
+            if (parameters.IntParameters.ContainsKey(paramName))
+                parameters.IntParameters[paramName] = value;
+        }
+
+        private void SetDoubleParameter(PressureContourParameters parameters, string paramName, double value)
+        {
+            if (parameters.DoubleParameters.ContainsKey(paramName))
+                parameters.DoubleParameters[paramName] = value;
+        }
+
+        private bool TryGetParameterName(ContourSideName side, ParameterRole role, bool isStart, out string paramName)
+        {
+            paramName = _parameterNameConfig.GetParameterName(role, side, isStart);
+            return !string.IsNullOrEmpty(paramName);
+        }
+
+        private void SetOffsetFromEdge(PressureContourParameters parameters, ContourSideName side, double distance, bool isStart)
+        {
+            if (TryGetParameterName(side, ParameterRole.OffsetStart, isStart, out string paramName) ||
+                TryGetParameterName(side, ParameterRole.OffsetEnd, !isStart, out paramName))
+            {
+                if (parameters.DoubleParameters.TryGetValue(paramName, out double currentValue))
+                {
+                    if (currentValue < distance)
+                        parameters.DoubleParameters[paramName] = distance;
+                }
+            }
+        }
+
+        private void SetHoleOnEdge(PressureContourParameters parameters, ContourSideName side, double distance, double offset)
+        {
+            if (!TryGetParameterName(side, ParameterRole.HoleWidth, false, out string widthParamName) ||
+                !TryGetParameterName(side, ParameterRole.HoleOffset, false, out string offsetParamName))
+                return;
+
+            if (parameters.DoubleParameters.TryGetValue(widthParamName, out double currentWidth) &&
+                parameters.DoubleParameters.TryGetValue(offsetParamName, out double currentOffset))
+            {
+                if (currentWidth != 0 && currentOffset != 0)
+                {
+                    parameters.DoubleParameters[widthParamName] =
+                        Math.Max(offset + distance, currentOffset + currentWidth) - Math.Min(offset, currentOffset);
+                    parameters.DoubleParameters[offsetParamName] = Math.Min(offset, currentOffset);
+                }
+                else
+                {
+                    parameters.DoubleParameters[widthParamName] = distance;
+                    parameters.DoubleParameters[offsetParamName] = offset;
+                }
+            }
+        }
+
+        private void DisableEdge(PressureContourParameters parameters, ContourSideName side)
+        {
+            if (TryGetParameterName(side, ParameterRole.Enabled, false, out string paramName))
+            {
+                SetIntParameter(parameters, paramName, 0);
+            }
+        }
+
+        #endregion
         private double CalculateDistance(XYZ pointOnEdge, XYZ pointEndEdge) =>
             pointOnEdge.DistanceTo(pointEndEdge);
         private double CalculateOffset(XYZ firstPointOnEdge, XYZ secondPointOnEdge, XYZ pointEndEdge)
