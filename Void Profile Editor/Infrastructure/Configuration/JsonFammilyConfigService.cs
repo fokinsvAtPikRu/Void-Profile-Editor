@@ -15,7 +15,6 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
     {
         private readonly string _configPath;
         private Dictionary<string, AlowwedFamilyWrapperDto> _familyConfigs = new Dictionary<string, AlowwedFamilyWrapperDto>();
-        //private Dictionary<string, PressureContourParameters> _familyParameters = new Dictionary<string, PressureContourParameters>();
         private IRevitMessageService _revitMessageService;
         private readonly object _lock = new object();
 
@@ -52,7 +51,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
                     }
 
                     var json = File.ReadAllText(_configPath);
-                    var dto = JsonConvert.DeserializeObject<AllowedFamiliesConfigDto>(json);
+                    var dto = JsonConvert.DeserializeObject<RootObject>(json);
 
                     var newConfigs = new Dictionary<string, AlowwedFamilyWrapperDto>();
                     if (dto?.AllowedFamilyNames != null)
@@ -89,42 +88,53 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
         public void Reload() => LoadConfig();
 
 
-        public Result<PressureContourParameters> GetParameterNamesForFamily(string familyName)
+        public Result<PressureContour> GetParameterNamesForFamily(string id, string familyName)
         {
             if (string.IsNullOrEmpty(familyName))
-                return Result.Failure<PressureContourParameters>("familyName is null or empty");
+                return Result.Failure<PressureContour>("familyName is null or empty");
             // check ActiveEdge
             if (_familyConfigs[familyName].Parameters.ActiveEdge == null)
-                return Result.Failure<PressureContourParameters>("ActiveEdge is null");
+                return Result.Failure<PressureContour>("ActiveEdge is null");
             if (_familyConfigs[familyName].Parameters.ActiveEdge.Count == 0)
-                return Result.Failure<PressureContourParameters>("ActiveEdge is empty");
+                return Result.Failure<PressureContour>("ActiveEdge is empty");
             // check DoubleParameters
             if (_familyConfigs[familyName].Parameters.DoubleParameters == null)
-                return Result.Failure<PressureContourParameters>("DoubleParameters is null");
+                return Result.Failure<PressureContour>("DoubleParameters is null");
             if (_familyConfigs[familyName].Parameters.DoubleParameters.Count == 0)
-                return Result.Failure<PressureContourParameters>("DoubleParameters is empty");
+                return Result.Failure<PressureContour>("DoubleParameters is empty");
             // check IntParameters
             if (_familyConfigs[familyName].Parameters.IntParameters == null)
-                return Result.Failure<PressureContourParameters>("IntParameters is null");
+                return Result.Failure<PressureContour>("IntParameters is null");
             if (_familyConfigs[familyName].Parameters.IntParameters.Count == 0)
-                return Result.Failure<PressureContourParameters>("IntParameters is empty");
+                return Result.Failure<PressureContour>("IntParameters is empty");
             // заполняем параметры 
             var activeEdge = new List<ContourSideName>();
             foreach (var name in _familyConfigs[familyName].Parameters.ActiveEdge)
             {
                 activeEdge.Add(name);
             }
+            var dimensions = new Dictionary<string, double>();
+            foreach (var dimension in _familyConfigs[familyName].Parameters.Dimensions.DoublrParameters)
+            {
+                dimensions.Add(dimension, default(double));
+            }
             var doubleParameters = new Dictionary<string, double>();
             foreach (var p in _familyConfigs[familyName].Parameters.DoubleParameters)
             {
-                doubleParameters.Add(p, 0.0);
+                doubleParameters.Add(p, default(double));
             }
             var intParameters = new Dictionary<string, int>();
             foreach (var p in _familyConfigs[familyName].Parameters.IntParameters)
             {
-                intParameters.Add(p, 0);
+                intParameters.Add(p, default(int));
             }
-            return new PressureContourParameters(familyName, activeEdge, doubleParameters, intParameters);
+            return new PressureContour(                
+                familyName,
+                _familyConfigs[familyName].FamilyType,
+                _familyConfigs[familyName].Parameters.Dimensions,
+                activeEdge,
+                doubleParameters,
+                intParameters);
         }
 
         public AlowwedFamilyWrapperDto GetFamilyConfig(string familyName)
@@ -132,9 +142,9 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
             return _familyConfigs.TryGetValue(familyName, out var config) ? config : null;
         }
 
-        public AllowedFamiliesConfigDto GetFullConfig()
+        public RootObject GetFullConfig()
         {
-            return new AllowedFamiliesConfigDto
+            return new RootObject
             {
                 AllowedFamilyNames = _familyConfigs.Values.ToList()
             };

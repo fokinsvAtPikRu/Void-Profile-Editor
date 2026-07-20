@@ -9,7 +9,7 @@ namespace Void_Profile_Editor.Domain.Abstraction.Configuration
         int Count { get; }
         bool IsAllowed(string familyName);
         IReadOnlyList<string> GetAllowedFamilies();
-        Result<PressureContourParameters> GetParameterNamesForFamily(string familyName);
+        Result<DomainPressureContourParameters> GetParameterNamesForFamily(string familyName);
         
         
     }

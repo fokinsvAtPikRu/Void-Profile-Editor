@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Autodesk.Revit.DB.Structure;
 using Void_Profile_Editor.Domain.Abstraction.Configuration;
+using Void_Profile_Editor.Infrastructure.Model;
 
 
 namespace Void_Profile_Editor.Infrastructure.Adapters
@@ -27,19 +28,19 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
             new DetailLineDomain(line.GetEndPoint(0).ToDomain(), line.GetEndPoint(1).ToDomain());
         public static string ToDomain(this ElementId revitId) =>
             revitId.IntegerValue.ToString();
-        public static Result<PressureContour> ToDomain(this FamilyInstance instance, IAllowedFamiliesConfig config)
+        public static Result<RevitPressureContour> ToDomain(this FamilyInstance instance, IAllowedFamiliesConfig config)
         {
             if (instance == null)
-                return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: instsnce == null");
+                return Result.Failure<RevitPressureContour>("Adapter Revit to Domain PressureContour: instsnce == null");
             if (config == null)
-                return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: config == null");
+                return Result.Failure<RevitPressureContour>("Adapter Revit to Domain PressureContour: config == null");
             var familyName = instance.Symbol?.FamilyName;
             if (string.IsNullOrEmpty(familyName))
-                return Result.Failure<PressureContour>("Adapter Revit to Domain PressureContour: familyName is null or empty");
+                return Result.Failure<RevitPressureContour>("Adapter Revit to Domain PressureContour: familyName is null or empty");
             // получаем имена параметров из конфига
             var result = config.GetParameterNamesForFamily(familyName);
             if (result.IsFailure)
-                return Result.Failure<PressureContour>(result.Error);
+                return Result.Failure<RevitPressureContour>(result.Error);
             var parameters = result.Value;
             var doubleParameters = new Dictionary<string, double>();
             var intParameters = new Dictionary<string, int>();
@@ -79,10 +80,15 @@ namespace Void_Profile_Editor.Infrastructure.Adapters
                     typeMismatchParameters.Add($"{key} ожидался Integer, получен {value.StorageType}");
                 }
             }
-            return new PressureContour()
+            return new RevitPressureContour(
+                instance.Id.ToDomain(),
+                instance.Name,
+
+                )
             {
                 Id = instance.Id.ToDomain(),
                 FamilyName=familyName,
+                FamilyType=parameters.
                 InsertPoint = ((LocationPoint)instance.Location).Point.ToDomain(),
                 Rotation = ((LocationPoint)instance.Location).Rotation,
                 ContourParameters = new PressureContourParameters(

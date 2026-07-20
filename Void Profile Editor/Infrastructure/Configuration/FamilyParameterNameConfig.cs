@@ -17,7 +17,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
         private readonly ParameterDictionary _defaultValues;
         private readonly Dictionary<ContourSideName, SideMappingDto> _sideMappings;
 
-        private FamilyParameterNameConfig(string familyName, AllowedFamilyDto familyConfig)
+        private FamilyParameterNameConfig(string familyName, Parameters familyConfig)
         {
             _familyName = familyName;
             _parameterMap = new Dictionary<string, string>();
@@ -28,7 +28,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
             BuildMappings(familyConfig);
             BuildDefaultValues(familyConfig);
         }
-        public static Result<FamilyParameterNameConfig> Create(string familyName, AllowedFamilyDto familyConfig)
+        public static Result<FamilyParameterNameConfig> Create(string familyName, Parameters familyConfig)
         {
             // проверка для метода BuildMappings()
             if (familyConfig == null)
@@ -48,7 +48,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
 
             return Result.Success<FamilyParameterNameConfig>(new FamilyParameterNameConfig(familyName,familyConfig));
         }
-        private void BuildMappings(AllowedFamilyDto familyConfig)
+        private void BuildMappings(Parameters familyConfig)
         {
             foreach (var mapping in familyConfig.ParameterMappings)
             {
@@ -83,7 +83,7 @@ namespace Void_Profile_Editor.Infrastructure.Configuration
             }
         }
 
-        private Result BuildDefaultValues(AllowedFamilyDto familyConfig)
+        private Result BuildDefaultValues(Parameters familyConfig)
         {
             if (familyConfig == null)
                 return Result.Failure("familyConfig is null");

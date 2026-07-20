@@ -2,12 +2,17 @@
   "AllowedFamilyNames": [
     {
       "FamilyName": "075_Расчет на продавливание торцом стены (ОбщМод_Плита)",
+      "FamilyType": "WallEnd",
       "Parameters": {
         "ActiveEdge": [
           "Left",
           "Bottom",
           "Right"
         ],
+        "Dimensions": {
+          "DoubleParameters": [ "Толщина" ],
+          "Description": "Толщина стены"
+        },
         "DoubleParameters": [
           "h0",
           "Толщина",
@@ -57,11 +62,16 @@
     },
     {
       "FamilyName": "075_Расчет на продавливание углом (ОбщМод_Плита)",
+      "FamilyType": "Corner",
       "Parameters": {
-        "ActiveEdge": [          
+        "ActiveEdge": [
           "Bottom",
           "Right"
         ],
+        "Dimensions": {
+          "DoubleParameters": [ "Толщина", "Толщина_2" ],
+          "Description": "Толщина первой и второй стены"
+        },
         "DoubleParameters": [
           "h0",
           "Толщина",
@@ -100,6 +110,7 @@
     },
     {
       "FamilyName": "075_Расчет на продавливание пилоном (ОбщМод_Плита)",
+      "FamilyType": "Pylon",
       "Parameters": {
         "ActiveEdge": [
           "Top",
@@ -107,6 +118,10 @@
           "Bottom",
           "Right"
         ],
+        "Dimensions": {
+          "DoubleParameters": [ "Толщина", "Длина пилона" ],
+          "Description": "Размеры пилона"
+        },
         "DoubleParameters": [
           "h0",
           "Толщина",

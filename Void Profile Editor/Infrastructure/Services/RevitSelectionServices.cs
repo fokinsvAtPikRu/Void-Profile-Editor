@@ -5,6 +5,7 @@ using Void_Profile_Editor.Domain.Abstraction.Configuration;
 using Void_Profile_Editor.Domain.Model.Geometry;
 using Void_Profile_Editor.Infrastructure.Abstraction;
 using Void_Profile_Editor.Infrastructure.Adapters;
+using Void_Profile_Editor.Infrastructure.Model;
 
 namespace Void_Profile_Editor.Infrastructure.Services
 {
@@ -27,7 +28,7 @@ namespace Void_Profile_Editor.Infrastructure.Services
 
 
 
-        public async Task<Result<PressureContour>> PickFamilyInstanceAsync(string prompt = "Выберите объект")
+        public async Task<Result<RevitPressureContour>> PickFamilyInstanceAsync(string prompt = "Выберите объект")
         {
             var result = await _revitTask.Run(app => _selectionService.PickObject());
             if (result.IsSuccess)
@@ -35,11 +36,11 @@ namespace Void_Profile_Editor.Infrastructure.Services
                 var instance = result.Value;
                 var resultToDomain = instance.ToDomain(_config);
                 if (resultToDomain.IsFailure)
-                    return Result.Failure<PressureContour>(resultToDomain.Error);
+                    return Result.Failure<RevitPressureContour>(resultToDomain.Error);
                 return resultToDomain.Value;
             }
             else
-                return Result.Failure<PressureContour>(result.Error);
+                return Result.Failure<RevitPressureContour>(result.Error);
         }
 
         public async Task<Result<Point3DDomain>> PickPointAsync(string prompt = "Выберите точку")

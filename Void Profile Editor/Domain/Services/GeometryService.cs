@@ -149,13 +149,13 @@ namespace Void_Profile_Editor.Domain.Services
         }
         #region Вспомогательные методы для работы с параметрами через конфигурацию
 
-        private void SetIntParameter(PressureContourParameters parameters, string paramName, int value)
+        private void SetIntParameter(DomainPressureContourParameters parameters, string paramName, int value)
         {
             if (parameters.IntParameters.ContainsKey(paramName))
                 parameters.IntParameters[paramName] = value;
         }
 
-        private void SetDoubleParameter(PressureContourParameters parameters, string paramName, double value)
+        private void SetDoubleParameter(DomainPressureContourParameters parameters, string paramName, double value)
         {
             if (parameters.DoubleParameters.ContainsKey(paramName))
                 parameters.DoubleParameters[paramName] = value;
@@ -167,7 +167,7 @@ namespace Void_Profile_Editor.Domain.Services
             return !string.IsNullOrEmpty(paramName);
         }
 
-        private void SetOffsetFromEdge(PressureContourParameters parameters, ContourSideName side, double distance, bool isStart)
+        private void SetOffsetFromEdge(DomainPressureContourParameters parameters, ContourSideName side, double distance, bool isStart)
         {
             if (TryGetParameterName(side, ParameterRole.OffsetStart, isStart, out string paramName) ||
                 TryGetParameterName(side, ParameterRole.OffsetEnd, !isStart, out paramName))
@@ -180,7 +180,7 @@ namespace Void_Profile_Editor.Domain.Services
             }
         }
 
-        private void SetHoleOnEdge(PressureContourParameters parameters, ContourSideName side, double distance, double offset)
+        private void SetHoleOnEdge(DomainPressureContourParameters parameters, ContourSideName side, double distance, double offset)
         {
             if (!TryGetParameterName(side, ParameterRole.HoleWidth, false, out string widthParamName) ||
                 !TryGetParameterName(side, ParameterRole.HoleOffset, false, out string offsetParamName))
@@ -203,7 +203,7 @@ namespace Void_Profile_Editor.Domain.Services
             }
         }
 
-        private void DisableEdge(PressureContourParameters parameters, ContourSideName side)
+        private void DisableEdge(DomainPressureContourParameters parameters, ContourSideName side)
         {
             if (TryGetParameterName(side, ParameterRole.Enabled, false, out string paramName))
             {
@@ -221,12 +221,12 @@ namespace Void_Profile_Editor.Domain.Services
                 secondPointOnEdge.DistanceTo(pointEndEdge);
             return offset;
         }
-        private void SetOffsetFromEdge(PressureContourParameters parameters, string parameterName, double distance)
+        private void SetOffsetFromEdge(DomainPressureContourParameters parameters, string parameterName, double distance)
         {
             if (parameters.DoubleParameters[parameterName] < distance)
                 parameters.DoubleParameters[parameterName] = distance;
         }
-        private void SetHoleOnEdge(PressureContourParameters parameters,
+        private void SetHoleOnEdge(DomainPressureContourParameters parameters,
             string parameterNameHoleWidth,
             string parameterNameHoleOffset,
             double distance,
